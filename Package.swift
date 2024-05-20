@@ -13,8 +13,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "qaml",
-            url: "https://cdn.camelqa.com/iOS/qaml-1.0.3.xcframework.zip",
-            checksum: "59db9a5eb4347c3280a45e1cafabf839767300b860f2eeb61f854bcd51e26024"
+            url: "https://cdn.camelqa.com/iOS/qaml-1.0.4.xcframework.zip",
+            checksum: "5dced1f0a4f4acf58189928d18b34eee8e96d821315b2b372f39bcb1cbdb7039"
             ),
     ]
 )
