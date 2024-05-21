@@ -327,7 +327,7 @@ public class QamlClient {
         for action in response {
             // Decode the arguments
             let arguments = try JSONSerialization.jsonObject(with: action.arguments.data(using: .utf8)!, options: []) as! [String: Any]
-            os_log("Command: %@ - Executing action: %@ with arguments: %@", log: logger, type: .debug, command, action.name, arguments)
+            os_log("Command: %@ - Executing action: %@ with arguments: %@", log: logger, type: .info, command, action.name, arguments)
             switch action.name {
             case "type_text":
                 let text = arguments["text"] as! String
@@ -455,16 +455,22 @@ public class QamlClient {
     public func waitUntil(_ condition: String, timeout: TimeInterval = 10) async throws {
         let start = Date()
         try await sleep(duration: 0.5)
-        while true {
-            if Date().timeIntervalSince(start) > timeout {
-                throw QAMLException(reason: "Timeout waiting for condition: \(condition)")
+        do {
+            while true {
+                if Date().timeIntervalSince(start) > timeout {
+                    try await assertCondition(condition)
+                    return
+                }
+                do {
+                    os_log("Waiting for condition: %@", log: logger, type: .info, condition)
+                    try await assertCondition(condition)
+                    return
+                } catch {
+                    os_log("Condition %@ not met yet. Retrying...", log: logger, type: .info, condition)
+                }
             }
-            do {
-                try await assertCondition(condition)
-                return
-            } catch {
-                os_log("Condition %@ not met yet. Retrying...", log: logger, type: .debug, condition)
-            }
+        } catch {
+            throw QAMLException(reason: "Timeout waiting for condition: \(condition)")
         }
     }
     
@@ -580,5 +586,4 @@ public class QamlClient {
     }
 
 }
-
 
