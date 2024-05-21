@@ -4,17 +4,20 @@
 import PackageDescription
 
 let package = Package(
-    name: "package",
+    name: "qaml",
+    platforms: [
+        .iOS(.v13),
+        .macOS(.v11),
+    ],
     products: [
         .library(
             name: "qaml",
             targets: ["qaml"]),
     ],
     targets: [
-        .binaryTarget(
+        .target(
             name: "qaml",
-            url: "https://cdn.camelqa.com/iOS/qaml-1.0.5.xcframework.zip",
-            checksum: "dbc6bab1a7d4e3b2ad917a3cd7fa96d218c1c8349c4463b9b5500594797c61fd"
-            ),
+            dependencies: []
+        )
     ]
 )
