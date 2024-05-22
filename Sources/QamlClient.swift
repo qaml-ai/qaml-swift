@@ -370,9 +370,6 @@ public class QamlClient {
     @MainActor
     public func switchToApp(bundleId: String) async throws {
         let newApp = XCUIApplication(bundleIdentifier: bundleId)
-        if !newApp.exists {
-            throw QAMLException(reason: "App with bundle ID \(bundleId) is not installed")
-        }
         newApp.activate()
         app = newApp
         try await Task.sleep(nanoseconds: 1_000_000_000)
