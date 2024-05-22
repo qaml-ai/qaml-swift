@@ -375,11 +375,13 @@ public class QamlClient {
         try await Task.sleep(nanoseconds: 1_000_000_000)
     }
 
+#if compiler(>=5.8)
     @MainActor
     public func openURL(url: String) async throws {
         XCUIDevice.shared.system.open(URL(string: url)!)
         try await Task.sleep(nanoseconds: 1_000_000_000)
     }
+#endif
 
     private func getScreenshot(name: String? = nil) -> String {
         let screenshot = app.screenshot()
