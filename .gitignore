@@ -9,3 +9,5 @@ DerivedData/
 **/*.swp
 **/*.swo
 **/*.tmp
+*.xcuserdata
+*.xcuserstate
