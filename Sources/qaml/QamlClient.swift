@@ -328,6 +328,9 @@ public class QamlClient {
         }
 
         let (data, httpResponse, error) = synchronousDataTaskWithRunLoop(urlRequest: request)
+        if let error {
+            fail(error.localizedDescription)
+        }
 
         struct Action: Decodable {
             let name: String
@@ -419,7 +422,7 @@ public class QamlClient {
         return app.windows.firstMatch.frame
     }
 
-    public func assertCondition(_ assertion: String) throws {
+    public func assertCondition(_ assertion: String) {
         do {
             try _assertCondition(assertion)
         } catch {
@@ -464,6 +467,9 @@ public class QamlClient {
         }
 
         let (data, httpResponse, error) = synchronousDataTaskWithRunLoop(urlRequest: request)
+        if let error {
+            fail(error.localizedDescription)
+        }
 
         guard let data = data else {
             fail("No data received from QAML API")
@@ -636,7 +642,6 @@ public class QamlClient {
         }
         task.resume()
         while !done {
-            // TODO: Make sure that this doesn't hot loop
             RunLoop.current.run(mode: .common, before: .distantFuture)
         }
         return (data, response, error)
