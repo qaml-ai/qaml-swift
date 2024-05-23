@@ -8,6 +8,7 @@ public class QamlClient {
     let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
     public var systemPrompt = ""
     public var shouldUseAccessibilityElements: Bool
+    public var autoDelay: TimeInterval = 0.0
 
     var logger = OSLog(subsystem: "com.qaml", category: "QamlClient")
 
@@ -19,13 +20,18 @@ public class QamlClient {
         self.shouldUseAccessibilityElements = useAccessibilityElements
     }
 
-    func sleep(duration: TimeInterval) async throws {
-        try await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+    func sleep(duration: TimeInterval) {
+        // Use run loop to sleep
+        let start = Date()
+        while Date().timeIntervalSince(start) < duration {
+            // TODO: Make sure that this doesn't hot loop
+            RunLoop.current.run(mode: .default, before: .distantFuture)
+        }
     }
 
-    func reportError(reason: String) throws {
-        throw QAMLException(reason: reason)
+    func reportError(reason: String) {
         dumpAccessibilityElements()
+        fail(reason)
     }
 
         func elementTypeString(_ type: XCUIElement.ElementType) -> String {
@@ -272,9 +278,11 @@ public class QamlClient {
         return accessibilityElements
     }
 
-    @MainActor
-    public func execute(_ command: String) async throws {
-        var accessibilityElements = try getAccessibilityElements()
+    public func execute(_ command: String) {
+        if autoDelay > 0 {
+            sleep(duration: autoDelay)
+        }
+        var accessibilityElements = try! getAccessibilityElements()
         var isKeyboardShown = false
         accessibilityElements = accessibilityElements.filter { element in
             if element.type == "keyboard" || element.type == "key" {
@@ -308,25 +316,38 @@ public class QamlClient {
             is_keyboard_shown: isKeyboardShown
         )
 
-        // Make an async request to the QAML API
         let url = URL(string: "\(apiBaseURL)/execute")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.httpBody = try JSONEncoder().encode(payload)
+        do {
+            request.httpBody = try JSONEncoder().encode(payload)
+        } catch {
+            fail("Failed to encode payload: \(error)")
+        }
 
-        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+        let (data, httpResponse, error) = synchronousDataTaskWithRunLoop(urlRequest: request)
 
         struct Action: Decodable {
             let name: String
             let arguments: String
         }
-        let response = try JSONDecoder().decode([Action].self, from: data)
+        let response: [Action]
+        do {
+            response = try JSONDecoder().decode([Action].self, from: data!)
+        } catch {
+            fail("Failed to decode response: \(error)")
+        }
         // arguments is a json encoded string
         for action in response {
             // Decode the arguments
-            let arguments = try JSONSerialization.jsonObject(with: action.arguments.data(using: .utf8)!, options: []) as! [String: Any]
+            let arguments: [String: Any]
+            do {
+                arguments = try JSONSerialization.jsonObject(with: action.arguments.data(using: .utf8)!, options: []) as! [String: Any]
+            } catch {
+                fail("Failed to decode arguments: \(error)")
+            }
             os_log("Command: %@ - Executing action: %@ with arguments: %@", log: logger, type: .info, command, action.name, arguments)
             switch action.name {
             case "type_text":
@@ -355,10 +376,10 @@ public class QamlClient {
                 drag(startX: startX, startY: startY, endX: endX, endY: endY)
             case "sleep":
                 let duration = arguments["duration"] as! TimeInterval
-                try await sleep(duration: duration)
+                sleep(duration: duration)
             case "report_error":
                 let reason = arguments["reason"] as! String
-                try reportError(reason: reason)
+                reportError(reason: reason)
             case "assert":
                 XCTAssert(arguments["condition"] as! Bool, arguments["message"] as! String)
             default:
@@ -367,19 +388,17 @@ public class QamlClient {
         }
     }
 
-    @MainActor
-    public func switchToApp(bundleId: String) async throws {
+    public func switchToApp(bundleId: String) {
         let newApp = XCUIApplication(bundleIdentifier: bundleId)
         newApp.activate()
         app = newApp
-        try await Task.sleep(nanoseconds: 1_000_000_000)
+        sleep(duration: 1)
     }
 
 #if compiler(>=5.8)
-    @MainActor
-    public func openURL(url: String) async throws {
+    public func openURL(url: String) {
         XCUIDevice.shared.system.open(URL(string: url)!)
-        try await Task.sleep(nanoseconds: 1_000_000_000)
+        sleep(duration: 1)
     }
 #endif
 
@@ -400,9 +419,16 @@ public class QamlClient {
         return app.windows.firstMatch.frame
     }
 
-    @MainActor
-    public func assertCondition(_ assertion: String) async throws {
-        try await sleep(duration: 0.5)
+    public func assertCondition(_ assertion: String) throws {
+        do {
+            try _assertCondition(assertion)
+        } catch {
+            fail("\(error)")
+        }
+    }
+
+    public func _assertCondition(_ assertion: String) throws {
+        sleep(duration: autoDelay + 0.5)
         struct AssertionRequest: Encodable {
             struct Size: Encodable {
                 let width: Double
@@ -431,17 +457,31 @@ public class QamlClient {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.httpBody = try JSONEncoder().encode(payload)
+        do {
+            request.httpBody = try JSONEncoder().encode(payload)
+        } catch {
+            fail("Failed to encode payload: \(error)")
+        }
 
-        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+        let (data, httpResponse, error) = synchronousDataTaskWithRunLoop(urlRequest: request)
+
+        guard let data = data else {
+            fail("No data received from QAML API")
+        }
 
         struct AssertionResponse: Decodable {
             let name: String
             let arguments: String
         }
 
-        let assertionResponses = try JSONDecoder().decode([AssertionResponse].self, from: data)
-        let arguments = try JSONSerialization.jsonObject(with: assertionResponses[0].arguments.data(using: .utf8)!, options: []) as! [String: Any]
+        let assertionResponses: [AssertionResponse]
+        let arguments: [String: Any]
+        do {
+            assertionResponses = try JSONDecoder().decode([AssertionResponse].self, from: data)
+            arguments = try JSONSerialization.jsonObject(with: assertionResponses[0].arguments.data(using: .utf8)!, options: []) as! [String: Any]
+        } catch {
+            fail("Failed to decode response: \(error)")
+        }
         guard let result = arguments["result"] as? Bool else {
             throw QAMLException(reason: "Invalid response from QAML API")
         }
@@ -450,26 +490,24 @@ public class QamlClient {
         }
     }
 
-    @MainActor
-    public func waitUntil(_ condition: String, timeout: TimeInterval = 10) async throws {
+    public func waitUntil(_ condition: String, timeout: TimeInterval = 10) {
         let start = Date()
-        try await sleep(duration: 0.5)
         do {
             while true {
                 if Date().timeIntervalSince(start) > timeout {
-                    try await assertCondition(condition)
+                    try _assertCondition(condition)
                     return
                 }
                 do {
                     os_log("Waiting for condition: %@", log: logger, type: .info, condition)
-                    try await assertCondition(condition)
+                    try _assertCondition(condition)
                     return
                 } catch {
                     os_log("Condition %@ not met yet. Retrying...", log: logger, type: .info, condition)
                 }
             }
         } catch {
-            throw QAMLException(reason: "Timeout waiting for condition: \(condition)")
+            fail("\(error)")
         }
     }
     
@@ -486,7 +524,7 @@ public class QamlClient {
                 XCTFail("Task execution took too many steps. Max steps: \(maxSteps)")
             }
             iterations += 1
-            try await sleep(duration: 0.5)
+            sleep(duration: 0.5)
             let accessibilityElements = try getAccessibilityElements()
             let payload = ["task": task, "progress": progress, "screenshot": getScreenshot(), "accessibility_elements": accessibilityElements] as [String : Any]
         }
@@ -584,5 +622,30 @@ public class QamlClient {
         }
     }
 
+    // SYNC
+    func synchronousDataTaskWithRunLoop(urlRequest: URLRequest) -> (Data?, URLResponse?, Error?) {
+        var data: Data?
+        var response: URLResponse?
+        var error: Error?
+        var done = false
+        let task = URLSession.shared.dataTask(with: urlRequest) { (taskData, taskResponse, taskError) in
+            data = taskData
+            response = taskResponse
+            error = taskError
+            done = true
+        }
+        task.resume()
+        while !done {
+            // TODO: Make sure that this doesn't hot loop
+            RunLoop.current.run(mode: .default, before: .distantFuture)
+        }
+        return (data, response, error)
+    }
+
+}
+
+func fail(_ message: String) -> Never {
+    XCTFail(message)
+    fatalError(message)
 }
 
