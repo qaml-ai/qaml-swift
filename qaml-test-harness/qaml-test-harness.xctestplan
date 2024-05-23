@@ -4,7 +4,17 @@
       "id" : "92DF7040-3DEF-4BF5-A1C1-520323F2CEB2",
       "name" : "Test Scheme Action",
       "options" : {
-
+        "environmentVariableEntries" : [
+          {
+            "key" : "QAML_API_KEY",
+            "value" : "$(QAML_API_KEY)"
+          }
+        ],
+        "targetForVariableExpansion" : {
+          "containerPath" : "container:qaml-test-harness.xcodeproj",
+          "identifier" : "D2C530972BFFD61D00453798",
+          "name" : "qaml-test-harnessUITests"
+        }
       }
     }
   ],
