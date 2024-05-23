@@ -25,7 +25,7 @@ public class QamlClient {
         let start = Date()
         while Date().timeIntervalSince(start) < duration {
             // TODO: Make sure that this doesn't hot loop
-            RunLoop.current.run(mode: .default, before: .distantFuture)
+            RunLoop.current.run(mode: .common, before: .distantFuture)
         }
     }
 
@@ -637,7 +637,7 @@ public class QamlClient {
         task.resume()
         while !done {
             // TODO: Make sure that this doesn't hot loop
-            RunLoop.current.run(mode: .default, before: .distantFuture)
+            RunLoop.current.run(mode: .common, before: .distantFuture)
         }
         return (data, response, error)
     }
