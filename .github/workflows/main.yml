@@ -1,0 +1,37 @@
+name: Run XCTests
+
+on:
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    name: Run XCTests on macOS
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Run tests
+        id: run-tests
+        env:
+          DEVICE_UDIDS: ${{ secrets.DEVICE_UDIDS }}
+        run: |
+          IFS=',' read -r -a udids <<< "$DEVICE_UDIDS"
+          destinations=""
+          for udid in "${udids[@]}"; do
+            destinations="$destinations -destination id=$udid"
+          done
+          xcodebuild test \
+            -project qaml-test-harness/qaml-test-harness.xcodeproj \
+            -scheme qaml-test-harness \
+            $destinations \
+            -resultBundlePath TestResults
+
+      - name: xcresulttool
+        uses: actions/upload-artifact@v2
+        with:
+          path: TestResults.xcresult
+        if: success() || failure()
