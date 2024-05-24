@@ -18,6 +18,7 @@ jobs:
         id: run-tests
         env:
           DEVICE_UDIDS: ${{ secrets.DEVICE_UDIDS }}
+          QAML_API_KEY: ${{ secrets.QAML_API_KEY }}
         run: |
           IFS=',' read -r -a udids <<< "$DEVICE_UDIDS"
           destinations=""
