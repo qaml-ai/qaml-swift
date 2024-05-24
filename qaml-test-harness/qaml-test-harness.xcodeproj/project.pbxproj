@@ -1,0 +1,509 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D2C5307C2BFFD61C00453798 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C5307B2BFFD61C00453798 /* AppDelegate.swift */; };
+		D2C5307E2BFFD61C00453798 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C5307D2BFFD61C00453798 /* SceneDelegate.swift */; };
+		D2C530802BFFD61C00453798 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C5307F2BFFD61C00453798 /* ViewController.swift */; };
+		D2C530852BFFD61D00453798 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D2C530842BFFD61D00453798 /* Assets.xcassets */; };
+		D2C530882BFFD61D00453798 /* Base in Resources */ = {isa = PBXBuildFile; fileRef = D2C530872BFFD61D00453798 /* Base */; };
+		D2C5309D2BFFD61D00453798 /* qaml_test_harnessUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C5309C2BFFD61D00453798 /* qaml_test_harnessUITests.swift */; };
+		D2C530AD2BFFD6A100453798 /* qaml in Frameworks */ = {isa = PBXBuildFile; productRef = D2C530AC2BFFD6A100453798 /* qaml */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D2C530992BFFD61D00453798 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D2C530702BFFD61C00453798 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D2C530772BFFD61C00453798;
+			remoteInfo = "qaml-test-harness";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		D206892B2BFFDD4E00108A7D /* qaml-test-harness.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "qaml-test-harness.xctestplan"; sourceTree = "<group>"; };
+		D2C530782BFFD61C00453798 /* qaml-test-harness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "qaml-test-harness.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D2C5307B2BFFD61C00453798 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		D2C5307D2BFFD61C00453798 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		D2C5307F2BFFD61C00453798 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		D2C530842BFFD61D00453798 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D2C530872BFFD61D00453798 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		D2C530892BFFD61D00453798 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D2C530982BFFD61D00453798 /* qaml-test-harnessUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "qaml-test-harnessUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D2C5309C2BFFD61D00453798 /* qaml_test_harnessUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = qaml_test_harnessUITests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D2C530752BFFD61C00453798 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D2C530952BFFD61D00453798 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D2C530AD2BFFD6A100453798 /* qaml in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D2C5306F2BFFD61C00453798 = {
+			isa = PBXGroup;
+			children = (
+				D206892B2BFFDD4E00108A7D /* qaml-test-harness.xctestplan */,
+				D2C5307A2BFFD61C00453798 /* qaml-test-harness */,
+				D2C5309B2BFFD61D00453798 /* qaml-test-harnessUITests */,
+				D2C530792BFFD61C00453798 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D2C530792BFFD61C00453798 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D2C530782BFFD61C00453798 /* qaml-test-harness.app */,
+				D2C530982BFFD61D00453798 /* qaml-test-harnessUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D2C5307A2BFFD61C00453798 /* qaml-test-harness */ = {
+			isa = PBXGroup;
+			children = (
+				D2C5307B2BFFD61C00453798 /* AppDelegate.swift */,
+				D2C5307D2BFFD61C00453798 /* SceneDelegate.swift */,
+				D2C5307F2BFFD61C00453798 /* ViewController.swift */,
+				D2C530842BFFD61D00453798 /* Assets.xcassets */,
+				D2C530862BFFD61D00453798 /* LaunchScreen.storyboard */,
+				D2C530892BFFD61D00453798 /* Info.plist */,
+			);
+			path = "qaml-test-harness";
+			sourceTree = "<group>";
+		};
+		D2C5309B2BFFD61D00453798 /* qaml-test-harnessUITests */ = {
+			isa = PBXGroup;
+			children = (
+				D2C5309C2BFFD61D00453798 /* qaml_test_harnessUITests.swift */,
+			);
+			path = "qaml-test-harnessUITests";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D2C530772BFFD61C00453798 /* qaml-test-harness */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D2C530A22BFFD61D00453798 /* Build configuration list for PBXNativeTarget "qaml-test-harness" */;
+			buildPhases = (
+				D2C530742BFFD61C00453798 /* Sources */,
+				D2C530752BFFD61C00453798 /* Frameworks */,
+				D2C530762BFFD61C00453798 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "qaml-test-harness";
+			productName = "qaml-test-harness";
+			productReference = D2C530782BFFD61C00453798 /* qaml-test-harness.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D2C530972BFFD61D00453798 /* qaml-test-harnessUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D2C530A82BFFD61D00453798 /* Build configuration list for PBXNativeTarget "qaml-test-harnessUITests" */;
+			buildPhases = (
+				D2C530942BFFD61D00453798 /* Sources */,
+				D2C530952BFFD61D00453798 /* Frameworks */,
+				D2C530962BFFD61D00453798 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D2C5309A2BFFD61D00453798 /* PBXTargetDependency */,
+			);
+			name = "qaml-test-harnessUITests";
+			packageProductDependencies = (
+				D2C530AC2BFFD6A100453798 /* qaml */,
+			);
+			productName = "qaml-test-harnessUITests";
+			productReference = D2C530982BFFD61D00453798 /* qaml-test-harnessUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D2C530702BFFD61C00453798 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					D2C530772BFFD61C00453798 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					D2C530972BFFD61D00453798 = {
+						CreatedOnToolsVersion = 15.4;
+						TestTargetID = D2C530772BFFD61C00453798;
+					};
+				};
+			};
+			buildConfigurationList = D2C530732BFFD61C00453798 /* Build configuration list for PBXProject "qaml-test-harness" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D2C5306F2BFFD61C00453798;
+			packageReferences = (
+				D2C530AB2BFFD6A100453798 /* XCLocalSwiftPackageReference "../" */,
+			);
+			productRefGroup = D2C530792BFFD61C00453798 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D2C530772BFFD61C00453798 /* qaml-test-harness */,
+				D2C530972BFFD61D00453798 /* qaml-test-harnessUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D2C530762BFFD61C00453798 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D2C530852BFFD61D00453798 /* Assets.xcassets in Resources */,
+				D2C530882BFFD61D00453798 /* Base in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D2C530962BFFD61D00453798 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D2C530742BFFD61C00453798 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D2C530802BFFD61C00453798 /* ViewController.swift in Sources */,
+				D2C5307C2BFFD61C00453798 /* AppDelegate.swift in Sources */,
+				D2C5307E2BFFD61C00453798 /* SceneDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D2C530942BFFD61D00453798 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D2C5309D2BFFD61D00453798 /* qaml_test_harnessUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D2C5309A2BFFD61D00453798 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D2C530772BFFD61C00453798 /* qaml-test-harness */;
+			targetProxy = D2C530992BFFD61D00453798 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		D2C530862BFFD61D00453798 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				D2C530872BFFD61D00453798 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		D2C530A02BFFD61D00453798 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		D2C530A12BFFD61D00453798 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D2C530A32BFFD61D00453798 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PEZC3LCN5S;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "qaml-test-harness/Info.plist";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.camelqa.qaml-test-harness";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D2C530A42BFFD61D00453798 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PEZC3LCN5S;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "qaml-test-harness/Info.plist";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.camelqa.qaml-test-harness";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D2C530A92BFFD61D00453798 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PEZC3LCN5S;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.camelqa.qaml-test-harnessUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "qaml-test-harness";
+			};
+			name = Debug;
+		};
+		D2C530AA2BFFD61D00453798 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PEZC3LCN5S;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.camelqa.qaml-test-harnessUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "qaml-test-harness";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D2C530732BFFD61C00453798 /* Build configuration list for PBXProject "qaml-test-harness" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D2C530A02BFFD61D00453798 /* Debug */,
+				D2C530A12BFFD61D00453798 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D2C530A22BFFD61D00453798 /* Build configuration list for PBXNativeTarget "qaml-test-harness" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D2C530A32BFFD61D00453798 /* Debug */,
+				D2C530A42BFFD61D00453798 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D2C530A82BFFD61D00453798 /* Build configuration list for PBXNativeTarget "qaml-test-harnessUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D2C530A92BFFD61D00453798 /* Debug */,
+				D2C530AA2BFFD61D00453798 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		D2C530AB2BFFD6A100453798 /* XCLocalSwiftPackageReference "../" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D2C530AC2BFFD6A100453798 /* qaml */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = qaml;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = D2C530702BFFD61C00453798 /* Project object */;
+}
