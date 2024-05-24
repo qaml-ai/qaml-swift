@@ -32,7 +32,7 @@ jobs:
             -resultBundlePath TestResults
 
       - name: xcresulttool
-        uses: actions/upload-artifact@v2
+        uses: kishikawakatsumi/xcresulttool@v1
         with:
           path: TestResults.xcresult
         if: success() || failure()
