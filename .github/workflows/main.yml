@@ -23,6 +23,7 @@ jobs:
           IFS=',' read -r -a udids <<< "$DEVICE_UDIDS"
           destinations=""
           for udid in "${udids[@]}"; do
+            xcrun simctl uninstall $udid com.camelqa.qaml-test-harness
             destinations="$destinations -destination id=$udid"
           done
           xcodebuild test \
