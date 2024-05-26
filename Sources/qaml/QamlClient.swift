@@ -405,13 +405,15 @@ public class QamlClient {
     }
 #endif
 
+    private var assertionNumber = 0
     private func getScreenshot(name: String? = nil) -> String {
         let screenshot = app.screenshot()
         let attachment = XCTAttachment(screenshot: screenshot)
         attachment.lifetime = .keepAlways
         if let name = name {
-            attachment.name = name
-            XCTContext.runActivity(named: name) { activity in
+            let assertionName = "assertion_\(assertionNumber)"
+            attachment.name = assertionName
+            XCTContext.runActivity(named: assertionName) { activity in
                 activity.add(attachment)
             }
         }
