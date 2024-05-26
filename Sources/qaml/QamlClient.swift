@@ -279,114 +279,116 @@ public class QamlClient {
     }
 
     public func execute(_ command: String) {
-        if autoDelay > 0 {
-            sleep(duration: autoDelay)
-        }
-        var accessibilityElements = try! getAccessibilityElements()
-        var isKeyboardShown = false
-        accessibilityElements = accessibilityElements.filter { element in
-            if element.type == "keyboard" || element.type == "key" {
-                isKeyboardShown = true
-                return false
+        XCTContext.runActivity(named: "Take Screenshot") { activity in
+            if autoDelay > 0 {
+                sleep(duration: autoDelay)
             }
-            return true
-        }
-        struct ActionRequest: Encodable {
-            struct Size: Encodable {
-                let width: Int
-                let height: Int
+            var accessibilityElements = try! getAccessibilityElements()
+            var isKeyboardShown = false
+            accessibilityElements = accessibilityElements.filter { element in
+                if element.type == "keyboard" || element.type == "key" {
+                    isKeyboardShown = true
+                    return false
+                }
+                return true
             }
-            let action: String
-            let screen_size: Size
-            let screenshot: String
-            let platform: String
-            let extra_context: String
-            let accessibility_elements: [Element]
-            let is_keyboard_shown: Bool
-        }
+            struct ActionRequest: Encodable {
+                struct Size: Encodable {
+                    let width: Int
+                    let height: Int
+                }
+                let action: String
+                let screen_size: Size
+                let screenshot: String
+                let platform: String
+                let extra_context: String
+                let accessibility_elements: [Element]
+                let is_keyboard_shown: Bool
+            }
 
-        let windowSize = getWindowSize()
-        let payload = ActionRequest(
-            action: command,
-            screen_size: ActionRequest.Size(width: Int(windowSize.width), height: Int(windowSize.height)),
-            screenshot: getScreenshot(),
-            platform: "iOS",
-            extra_context: systemPrompt,
-            accessibility_elements: accessibilityElements,
-            is_keyboard_shown: isKeyboardShown
-        )
+            let windowSize = getWindowSize()
+            let payload = ActionRequest(
+                action: command,
+                screen_size: ActionRequest.Size(width: Int(windowSize.width), height: Int(windowSize.height)),
+                screenshot: getScreenshot(activity),
+                platform: "iOS",
+                extra_context: systemPrompt,
+                accessibility_elements: accessibilityElements,
+                is_keyboard_shown: isKeyboardShown
+            )
 
-        let url = URL(string: "\(apiBaseURL)/execute")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        do {
-            request.httpBody = try JSONEncoder().encode(payload)
-        } catch {
-            fail("Failed to encode payload: \(error)")
-        }
-
-        let (data, httpResponse, error) = synchronousDataTaskWithRunLoop(urlRequest: request)
-        if let error {
-            fail(error.localizedDescription)
-        }
-
-        struct Action: Decodable {
-            let name: String
-            let arguments: String
-        }
-        let response: [Action]
-        do {
-            response = try JSONDecoder().decode([Action].self, from: data!)
-        } catch {
-            fail("Failed to decode response: \(error)")
-        }
-        // arguments is a json encoded string
-        for action in response {
-            // Decode the arguments
-            let arguments: [String: Any]
+            let url = URL(string: "\(apiBaseURL)/execute")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
             do {
-                arguments = try JSONSerialization.jsonObject(with: action.arguments.data(using: .utf8)!, options: []) as! [String: Any]
+                request.httpBody = try JSONEncoder().encode(payload)
             } catch {
-                fail("Failed to decode arguments: \(error)")
+                fail("Failed to encode payload: \(error)")
             }
-            os_log("Command: %@ - Executing action: %@ with arguments: %@", log: logger, type: .info, command, action.name, arguments)
-            switch action.name {
-            case "type_text":
-                let text = arguments["text"] as! String
-                typeText(text: text)
-            case "tap":
-                let x = Int(arguments["x"] as! Double)
-                let y = Int(arguments["y"] as! Double)
-                tap(x: x, y: y)
-            case "long_press":
-                let x = Int(arguments["x"] as! Double)
-                let y = Int(arguments["y"] as! Double)
-                app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: x, dy: y)).press(forDuration: 1.5)
-            case "swipe":
-                let direction = arguments["direction"] as! String
-                swipe(direction: direction)
-            // FIXME: Scroll on scrollable elements
-            case "scroll":
-                let direction = arguments["direction"] as! String
-                scroll(direction: direction)
-            case "drag":
-                let startX = arguments["startX"] as! Int
-                let startY = arguments["startY"] as! Int
-                let endX = arguments["endX"] as! Int
-                let endY = arguments["endY"] as! Int
-                drag(startX: startX, startY: startY, endX: endX, endY: endY)
-            case "sleep":
-                let duration = arguments["duration"] as! TimeInterval
-                sleep(duration: duration)
-            case "report_error":
-                let reason = arguments["reason"] as! String
-                reportError(reason: reason)
-            case "assert":
-                XCTAssert(arguments["condition"] as! Bool, arguments["message"] as! String)
-            default:
-                fatalError("Invalid action: \(action.name)")
+
+            let (data, httpResponse, error) = synchronousDataTaskWithRunLoop(urlRequest: request)
+            if let error {
+                fail(error.localizedDescription)
+            }
+
+            struct Action: Decodable {
+                let name: String
+                let arguments: String
+            }
+            let response: [Action]
+            do {
+                response = try JSONDecoder().decode([Action].self, from: data!)
+            } catch {
+                fail("Failed to decode response: \(error)")
+            }
+            // arguments is a json encoded string
+            for action in response {
+                // Decode the arguments
+                let arguments: [String: Any]
+                do {
+                    arguments = try JSONSerialization.jsonObject(with: action.arguments.data(using: .utf8)!, options: []) as! [String: Any]
+                } catch {
+                    fail("Failed to decode arguments: \(error)")
+                }
+                os_log("Command: %@ - Executing action: %@ with arguments: %@", log: logger, type: .info, command, action.name, arguments)
+                switch action.name {
+                case "type_text":
+                    let text = arguments["text"] as! String
+                    typeText(text: text)
+                case "tap":
+                    let x = Int(arguments["x"] as! Double)
+                    let y = Int(arguments["y"] as! Double)
+                    tap(x: x, y: y)
+                case "long_press":
+                    let x = Int(arguments["x"] as! Double)
+                    let y = Int(arguments["y"] as! Double)
+                    app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: x, dy: y)).press(forDuration: 1.5)
+                case "swipe":
+                    let direction = arguments["direction"] as! String
+                    swipe(direction: direction)
+                    // FIXME: Scroll on scrollable elements
+                case "scroll":
+                    let direction = arguments["direction"] as! String
+                    scroll(direction: direction)
+                case "drag":
+                    let startX = arguments["startX"] as! Int
+                    let startY = arguments["startY"] as! Int
+                    let endX = arguments["endX"] as! Int
+                    let endY = arguments["endY"] as! Int
+                    drag(startX: startX, startY: startY, endX: endX, endY: endY)
+                case "sleep":
+                    let duration = arguments["duration"] as! TimeInterval
+                    sleep(duration: duration)
+                case "report_error":
+                    let reason = arguments["reason"] as! String
+                    reportError(reason: reason)
+                case "assert":
+                    XCTAssert(arguments["condition"] as! Bool, arguments["message"] as! String)
+                default:
+                    fatalError("Invalid action: \(action.name)")
+                }
             }
         }
     }
@@ -405,18 +407,11 @@ public class QamlClient {
     }
 #endif
 
-    private var assertionNumber = 0
-    private func getScreenshot(name: String? = nil) -> String {
+    private func getScreenshot(_ activity: XCTActivity) -> String {
         let screenshot = app.screenshot()
         let attachment = XCTAttachment(screenshot: screenshot)
         attachment.lifetime = .keepAlways
-        if let name = name {
-            let assertionName = "assertion_\(assertionNumber)"
-            attachment.name = assertionName
-            XCTContext.runActivity(named: assertionName) { activity in
-                activity.add(attachment)
-            }
-        }
+        activity.add(attachment)
         return screenshot.pngRepresentation.base64EncodedString()
     }
 
@@ -425,14 +420,16 @@ public class QamlClient {
     }
 
     public func assertCondition(_ assertion: String) {
-        do {
-            try _assertCondition(assertion)
-        } catch {
-            fail("\(error)")
+        XCTContext.runActivity(named: "Assert Condition: \(assertion)") { activity in
+            do {
+                try _assertCondition(assertion, activity: activity)
+            } catch {
+                fail("\(error)")
+            }
         }
     }
 
-    public func _assertCondition(_ assertion: String) throws {
+    public func _assertCondition(_ assertion: String, activity: XCTActivity) throws {
         sleep(duration: autoDelay + 0.5)
         struct AssertionRequest: Encodable {
             struct Size: Encodable {
@@ -446,7 +443,7 @@ public class QamlClient {
             let extra_context: String
             let accessibility_elements: String
         }
-        let screenshotData = getScreenshot(name: "Assertion Screenshot \(assertion)")
+        let screenshotData = getScreenshot(activity)
         let screenSize = getWindowSize()
         let payload = AssertionRequest(
             assertion: assertion,
@@ -500,22 +497,24 @@ public class QamlClient {
 
     public func waitUntil(_ condition: String, timeout: TimeInterval = 10) {
         let start = Date()
-        do {
-            while true {
-                if Date().timeIntervalSince(start) > timeout {
-                    try _assertCondition(condition)
-                    return
+        XCTContext.runActivity(named: "Wait Until \(condition)") { activity in
+            do {
+                while true {
+                    if Date().timeIntervalSince(start) > timeout {
+                        try _assertCondition(condition, activity: activity)
+                        return
+                    }
+                    do {
+                        os_log("Waiting for condition: %@", log: logger, type: .info, condition)
+                        try _assertCondition(condition, activity: activity)
+                        return
+                    } catch {
+                        os_log("Condition %@ not met yet. Retrying...", log: logger, type: .info, condition)
+                    }
                 }
-                do {
-                    os_log("Waiting for condition: %@", log: logger, type: .info, condition)
-                    try _assertCondition(condition)
-                    return
-                } catch {
-                    os_log("Condition %@ not met yet. Retrying...", log: logger, type: .info, condition)
-                }
+            } catch {
+                fail("\(error)")
             }
-        } catch {
-            fail("\(error)")
         }
     }
     
@@ -525,16 +524,18 @@ public class QamlClient {
 
     @MainActor
     func task(task: String, maxSteps: Int = 10) async throws {
-        var progress: [String] = []
-        var iterations = 0
-        while true {
-            if iterations >= maxSteps {
-                XCTFail("Task execution took too many steps. Max steps: \(maxSteps)")
+        try XCTContext.runActivity(named: "Task: \(task)") { activity in
+            var progress: [String] = []
+            var iterations = 0
+            while true {
+                if iterations >= maxSteps {
+                    XCTFail("Task execution took too many steps. Max steps: \(maxSteps)")
+                }
+                iterations += 1
+                sleep(duration: 0.5)
+                let accessibilityElements = try getAccessibilityElements()
+                let payload = ["task": task, "progress": progress, "screenshot": getScreenshot(activity), "accessibility_elements": accessibilityElements] as [String : Any]
             }
-            iterations += 1
-            sleep(duration: 0.5)
-            let accessibilityElements = try getAccessibilityElements()
-            let payload = ["task": task, "progress": progress, "screenshot": getScreenshot(), "accessibility_elements": accessibilityElements] as [String : Any]
         }
     }
 
