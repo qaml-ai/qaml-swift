@@ -32,8 +32,10 @@ jobs:
             $destinations \
             -resultBundlePath TestResults
 
-      - name: xcresulttool
-        uses: kishikawakatsumi/xcresulttool@v1
+      - name: Upload results
+        uses: actions/upload-artifact@v2
         with:
+          name: TestResults.xcresult
           path: TestResults.xcresult
-        if: success() || failure()
+        if: always()
+
