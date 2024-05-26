@@ -1,0 +1,41 @@
+name: Run XCTests
+
+on:
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    name: Run XCTests on macOS
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Run tests
+        id: run-tests
+        env:
+          DEVICE_UDIDS: ${{ secrets.DEVICE_UDIDS }}
+          QAML_API_KEY: ${{ secrets.QAML_API_KEY }}
+        run: |
+          IFS=',' read -r -a udids <<< "$DEVICE_UDIDS"
+          destinations=""
+          for udid in "${udids[@]}"; do
+            ios-deploy -i $udid -9 -1 com.camelqa.qaml-test-harness
+            destinations="$destinations -destination id=$udid"
+          done
+          xcodebuild test \
+            -project qaml-test-harness/qaml-test-harness.xcodeproj \
+            -scheme qaml-test-harness \
+            $destinations \
+            -resultBundlePath TestResults
+
+      - name: Upload results
+        uses: actions/upload-artifact@v2
+        with:
+          name: TestResults.xcresult
+          path: TestResults.xcresult
+        if: always()
+
