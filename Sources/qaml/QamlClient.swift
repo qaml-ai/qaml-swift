@@ -398,6 +398,13 @@ public class QamlClient {
         sleep(duration: 1)
     }
 
+    public func launchApp(bundleId: String) {
+        let newApp = XCUIApplication(bundleIdentifier: bundleId)
+        newApp.launch()
+        app = newApp
+        sleep(duration: 1)
+    }
+
 #if compiler(>=5.8)
     public func openURL(url: String) {
         XCUIDevice.shared.system.open(URL(string: url)!)
