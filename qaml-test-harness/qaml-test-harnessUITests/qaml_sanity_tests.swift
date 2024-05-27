@@ -23,8 +23,7 @@ final class qaml_sanity_tests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func test_sanityOne_execute() throws {
-        // Set the bundle ID of the app you'd like to test
+    func test_weatherApp_weatherInSF() throws {
         let app = XCUIApplication(bundleIdentifier: "com.apple.weather")
         app.launch()
         
@@ -36,12 +35,11 @@ final class qaml_sanity_tests: XCTestCase {
         q.execute("click the location list button")
         q.execute("tap the search bar at the top")
         q.execute("type San Francisco")
-        q.execute("tap San Francisco, CA United States")
+        q.execute("tap the first result in the location list, 'San Francisco, CA United States'")
         q.assertCondition("The screen shows the weather for San Francisco")
     }
     
-    func test_sanityTwo_assert() throws {
-        // Set the bundle ID of the app you'd like to test
+    func test_youtube_lotsOfAsserts() throws {
         let app = XCUIApplication(bundleIdentifier: "com.google.ios.youtube")
         app.launch()
         
@@ -52,7 +50,7 @@ final class qaml_sanity_tests: XCTestCase {
         
         q.waitUntil("the app has succesfully loaded")
         q.assertCondition("the screen shows an app. There is a navigation bar at the bottom with 5 tabs including 'Home', 'Shorts', 'Subscriptions' and 'You'")
-        q.execute("tap the 'Shorts' tab")
+        q.execute("tap the 'Shorts' tab in the bottom nav bar")
         q.assertCondition("The screenshot is of YouTube Shorts. It shows a video or image. The bottom section of the screen shows the video's title, the creator's username. On the right there are options to like, dislike, comment, and share.")
         q.execute("tap the view comments button")
         q.assertCondition("The screen shows an app with a drawer of comments open that takes up most of the screen")
@@ -64,6 +62,90 @@ final class qaml_sanity_tests: XCTestCase {
         q.assertCondition("The screen shows the search page of YouTube. There is a searchbar at the top.")
         q.execute("tap the back button")
         q.assertCondition("The screenshot is of YouTube Shorts. It shows a video or image. The bottom section of the screen shows the video's title, the creator's username. On the right there are options to like, dislike, comment, and share.")
+    }
+    func test_youtube_basicAutoDelay() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.google.ios.youtube")
+        app.launch()
+        
+        let q = QamlClient(
+            apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!,
+            app: app
+        )
+        
+        q.autoDelay = 2
+        
+        q.waitUntil("the app has succesfully loaded")
+        q.execute("tap the 'Shorts' tab")
+        
+    }
+    func test_instgram_likeWithSystemPrompt() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.burbn.instagram")
+        app.launch()
+        
+        let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
+        
+        q.systemPrompt = "An image is like if the heart icon is solid is red. An image is not liked if the heart icon is a white outline and not filled."
+        
+        q.execute("scroll down")
+        q.assertCondition("A photo with a heart button beneath it is visible")
+        q.assertCondition("A photo with a heart button beneath it is visible. The photo is not liked.")
+        q.execute("tap the like button")
+        q.assertCondition("A photo with a heart button beneath it is visible. The photo has been liked.")
+    }
+    func test_snapchat_shareCameraRoll() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.toyopagroup.picaboo")
+        app.launch()
+        
+        let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
+        
+        
+        q.execute("tap the memories button")
+        q.execute("tap Camera Roll at the top")
+        q.execute("Tap the Enable button")
+        q.waitUntil("Settings for Snapchat are visible")
+        q.switchToApp(bundleId: "com.apple.Preferences")
+        q.assertCondition("User is in the Settings page for Snapchat")
+        q.execute("Tap Photos None button")
+        q.execute("tap Full Access")
+        q.assertCondition("Modal appears asking for full access to photo library")
+        q.execute("tap Allow Full Access button")
+        q.assertCondition("There is no modal on screen")
+        q.switchToApp(bundleId: "com.toyopagroup.picaboo")
+        q.execute("tap the memories button")
+        q.execute("tap Camera Roll at the top")
+        q.assertCondition("A camera roll of photos are showing")
+        q.switchToApp(bundleId: "com.apple.Preferences")
+        q.assertCondition("User is in the Photo library access page")
+        q.execute("tap none")
+    }
+    
+    func test_timerApp_waitUntil() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.apple.mobiletimer")
+        app.launch()
+        
+        let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
+        
+        
+        q.execute("tap the stopwatch tab")
+        q.execute("tap the start button")
+        q.waitUntil("The timer is over 35 seconds", timeout: 40)
+        q.execute("Tap the stop button")
+        q.execute("Tap the reset button")
+        q.assertCondition("the screenshot shows a timer with a zero value and a green start button")
+    }
+    func test_safariApp_openURL() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
+        app.launch()
+        
+        let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
+        
+        
+        q.openURL(url: "https://ycombinator.com")
+        q.assertCondition("the screenshot shows the web page for ycombinator.com")
+        q.openURL(url: "https://camelqa.com")
+        q.assertCondition("the screenshot shows the web page for camelqa.com with a banner that says 'put your testing on autopilot'")
+        q.openURL(url: "https://im3software.com")
+        q.assertCondition("the screenshot shows the web page for im3software.com with a logo that says 'IM3'")
     }
 
 }
