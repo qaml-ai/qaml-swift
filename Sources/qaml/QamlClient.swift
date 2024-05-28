@@ -340,7 +340,7 @@ public class QamlClient {
         do {
             response = try JSONDecoder().decode([Action].self, from: data!)
         } catch {
-            fail("Failed to decode response: \(error)")
+            fail("Failed to decode response: \(error), \(String(data: data!, encoding: .utf8))")
         }
         // arguments is a json encoded string
         for action in response {
@@ -495,7 +495,7 @@ public class QamlClient {
             assertionResponses = try JSONDecoder().decode([AssertionResponse].self, from: data)
             arguments = try JSONSerialization.jsonObject(with: assertionResponses[0].arguments.data(using: .utf8)!, options: []) as! [String: Any]
         } catch {
-            fail("Failed to decode response: \(error)")
+            fail("Failed to decode response: \(error), \(String(data: data, encoding: .utf8))")
         }
         guard let result = arguments["result"] as? Bool else {
             throw QAMLException(reason: "Invalid response from QAML API")
@@ -650,8 +650,18 @@ public class QamlClient {
             done = true
         }
         task.resume()
+        let runLoop = CFRunLoopGetCurrent()
+        let allModes = CFRunLoopCopyAllModes(runLoop) as! [CFString]
         while !done {
-            RunLoop.current.run(mode: .common, before: .distantFuture)
+            for mode in allModes {
+                if mode == ("kCFRunLoopDefaultMode" as CFString) {
+                    continue
+                }
+                CFRunLoopRunInMode(CFRunLoopMode(mode), 0.1, true)
+                if done {
+                    break
+                }
+            }
         }
         return (data, response, error)
     }
