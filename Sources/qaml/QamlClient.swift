@@ -340,7 +340,12 @@ public class QamlClient {
         do {
             response = try JSONDecoder().decode([Action].self, from: data!)
         } catch {
-            fail("Failed to decode response: \(error), \(String(data: data!, encoding: .utf8))")
+            do {
+                let failMessage = try JSONDecoder().decode(QamlErrorResponse.self, from: data!)
+                fail("API Error: \(failMessage.error)")
+            } catch {
+                fail("Failed to decode response: \(error)")
+            }
         }
         // arguments is a json encoded string
         for action in response {
@@ -495,7 +500,12 @@ public class QamlClient {
             assertionResponses = try JSONDecoder().decode([AssertionResponse].self, from: data)
             arguments = try JSONSerialization.jsonObject(with: assertionResponses[0].arguments.data(using: .utf8)!, options: []) as! [String: Any]
         } catch {
-            fail("Failed to decode response: \(error), \(String(data: data, encoding: .utf8))")
+            do {
+                let failMessage = try JSONDecoder().decode(QamlErrorResponse.self, from: data)
+                fail("API Error: \(failMessage.error)")
+            } catch {
+                fail("Failed to decode response: \(error)")
+            }
         }
         guard let result = arguments["result"] as? Bool else {
             throw QAMLException(reason: "Invalid response from QAML API")
@@ -673,3 +683,6 @@ func fail(_ message: String) -> Never {
     fatalError(message)
 }
 
+struct QamlErrorResponse: Codable {
+    let error: String?
+}
