@@ -283,7 +283,7 @@ public class QamlClient {
     }
 
     public func execute(_ command: String) {
-        XCTContext.runActivity(named: "Take Screenshot") { activity in
+        XCTContext.runActivity(named: "Execute command: \(command)") { activity in
             if autoDelay > 0 {
                 sleep(duration: autoDelay)
             }
