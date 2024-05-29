@@ -84,7 +84,7 @@ final class qaml_sanity_tests: XCTestCase {
         
         let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
         
-        q.systemPrompt = "An image is like if the heart icon is solid is red. An image is not liked if the heart icon is a white outline and not filled."
+        q.systemPrompt = "An image is like if the heart icon is solid is red. An image is not liked if the heart icon is an outline and not filled."
         
         q.execute("scroll down")
         q.assertCondition("A photo with a heart button beneath it is visible")
@@ -147,5 +147,57 @@ final class qaml_sanity_tests: XCTestCase {
         q.openURL(url: "https://im3software.com")
         q.assertCondition("the screenshot shows the web page for im3software.com with a logo that says 'IM3'")
     }
-
+    func test_podiumApp_tapAndTypeRegression() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.ionicframework.ionicapp410897")
+        app.launch()
+        
+        let q = QamlClient(
+            apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!,
+            app: app
+        )
+        
+        q.waitUntil("an app has completed loading")
+        q.execute("click the sign in button")
+        q.execute("tap enter email text field")
+        q.execute("type illiana@camelqa.com")
+        q.assertCondition("The screen shows a sign in page with the email 'illiana@camelqa.com' entered in the text field")
+        // tap and type bug is still present
+        q.type("mikeys@me.com")
+        q.assertCondition("The screen shows a sign in page with the email 'mikeys@me.com' entered in the text field")
+    }
+    func test_podiumApp_launchApp() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.ionicframework.ionicapp410897")
+        app.launch()
+        
+        let q = QamlClient(
+            apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!,
+            app: app
+        )
+        
+        q.waitUntil("The screen shows an app with a sign in button")
+        q.execute("tap the sign in button")
+        q.assertCondition("the screenshot shows a text field that says 'your email or phone number' and theres a button that says 'next'")
+        q.launchApp(bundleId: "com.ionicframework.ionicapp410897")
+        q.waitUntil("The screen shows an app with a sign in button")
+    }
+    func test_multiApp_launchApp() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.ionicframework.ionicapp410897")
+        app.launch()
+        
+        let q = QamlClient(
+            apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!,
+            app: app
+        )
+        
+        q.waitUntil("The screen shows an app with a sign in button")
+        q.execute("tap the sign in button")
+        q.assertCondition("the screenshot shows a text field that says 'your email or phone number' and theres a button that says 'next'")
+        q.launchApp(bundleId: "com.ionicframework.ionicapp410897")
+        q.waitUntil("The screen shows an app with a sign in button")
+        q.launchApp(bundleId: "com.apple.weather")
+        q.waitUntil("The screen shows a weather app")
+        q.execute("tap the show map button")
+        q.assertCondition("the screenshot shows a map view of a weather app")
+        
+    }
 }
