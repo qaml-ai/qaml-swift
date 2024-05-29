@@ -278,6 +278,10 @@ public class QamlClient {
         return accessibilityElements
     }
 
+    public func type(_ inputString: String) {
+        typeText(text: inputString)
+    }
+
     public func execute(_ command: String) {
         XCTContext.runActivity(named: "Take Screenshot") { activity in
             if autoDelay > 0 {
