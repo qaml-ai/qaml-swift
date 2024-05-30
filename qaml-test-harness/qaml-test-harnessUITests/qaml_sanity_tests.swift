@@ -37,6 +37,9 @@ final class qaml_sanity_tests: XCTestCase {
         q.execute("type San Francisco")
         q.execute("tap the first result in the location list, 'San Francisco, CA United States'")
         q.assertCondition("The screen shows the weather for San Francisco")
+        q.execute("tap the cancel button")
+        q.execute("tap the cancel button")
+        q.execute("tap my location from the location list")
     }
     
     func test_youtube_lotsOfAsserts() throws {
@@ -49,19 +52,20 @@ final class qaml_sanity_tests: XCTestCase {
         )
         
         q.waitUntil("the app has succesfully loaded")
-        q.assertCondition("the screen shows an app. There is a navigation bar at the bottom with 5 tabs including 'Home', 'Shorts', 'Subscriptions' and 'You'")
+        q.assertCondition("the screen shows an app. There is a navigation bar at the bottom with tabs including 'Home' and 'Shorts'")
         q.execute("tap the 'Shorts' tab in the bottom nav bar")
-        q.assertCondition("The screenshot is of YouTube Shorts. It shows a video or image. The bottom section of the screen shows the video's title, the creator's username. On the right there are options to like, dislike, comment, and share.")
+        q.assertCondition("The screenshot is of a video app. It shows a video or image. The bottom section of the screen shows the video's title, the creator's username. On the right there are options to like, dislike, comment, and share.")
         q.execute("tap the view comments button")
         q.assertCondition("The screen shows an app with a drawer of comments open that takes up most of the screen")
         q.execute("tap the view replies button")
         q.assertCondition("The screen shows an app with a drawer labeled Replies open that takes up most of the screen")
         q.execute("tap the close button")
-        q.assertCondition("The screenshot is of YouTube Shorts. It shows a video or image. The bottom section of the screen shows the video's title, the creator's username. On the right there are options to like, dislike, comment, and share.")
+        q.assertCondition("The screenshot of a video app. It shows a video or image. The bottom section of the screen shows the video's title, the creator's username. On the right there are options to like, dislike, comment, and share.")
         q.execute("tap the search button")
         q.assertCondition("The screen shows the search page of YouTube. There is a searchbar at the top.")
         q.execute("tap the back button")
-        q.assertCondition("The screenshot is of YouTube Shorts. It shows a video or image. The bottom section of the screen shows the video's title, the creator's username. On the right there are options to like, dislike, comment, and share.")
+        q.assertCondition("The screenshot of a video app. It shows a video or image. The bottom section of the screen shows the video's title, the creator's username. On the right there are options to like, dislike, comment, and share.")
+        q.execute("tap the home tab")
     }
     func test_youtube_basicAutoDelay() throws {
         let app = XCUIApplication(bundleIdentifier: "com.google.ios.youtube")
@@ -84,7 +88,7 @@ final class qaml_sanity_tests: XCTestCase {
         
         let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
         
-        q.systemPrompt = "An image is like if the heart icon is solid is red. An image is not liked if the heart icon is an outline and not filled."
+        q.systemPrompt = "An image is like if the heart icon is solid is red. An image is not liked if the heart icon is a white outline and not filled."
         
         q.execute("scroll down")
         q.assertCondition("A photo with a heart button beneath it is visible")
@@ -98,6 +102,7 @@ final class qaml_sanity_tests: XCTestCase {
         
         let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
         
+        q.systemPrompt = "If you are evaluating a menu on screen regarding photo library access,'Limited Access' is not checked. Only 'Full Access' or 'None' is checked."
         
         q.execute("tap the memories button")
         q.execute("tap Camera Roll at the top")
@@ -109,14 +114,15 @@ final class qaml_sanity_tests: XCTestCase {
         q.execute("tap Full Access")
         q.assertCondition("Modal appears asking for full access to photo library")
         q.execute("tap Allow Full Access button")
-        q.assertCondition("There is no modal on screen")
+        q.assertCondition("A menu on screen is showing photo library access with 'Full Access' checked. There is no popup showing.")
         q.switchToApp(bundleId: "com.toyopagroup.picaboo")
         q.execute("tap the memories button")
         q.execute("tap Camera Roll at the top")
         q.assertCondition("A camera roll of photos are showing")
         q.switchToApp(bundleId: "com.apple.Preferences")
         q.assertCondition("User is in the Photo library access page")
-        q.execute("tap none")
+        q.execute("tap the cell that says 'None'")
+        q.assertCondition("A menu on screen is showing photo library access with 'None' checked.")
     }
     
     func test_timerApp_waitUntil() throws {
@@ -128,10 +134,10 @@ final class qaml_sanity_tests: XCTestCase {
         
         q.execute("tap the stopwatch tab")
         q.execute("tap the start button")
-        q.waitUntil("The timer is over 35 seconds", timeout: 40)
+        q.waitUntil("The stopwatch is over 35 seconds", timeout: 40)
         q.execute("Tap the stop button")
         q.execute("Tap the reset button")
-        q.assertCondition("the screenshot shows a timer with a zero value and a green start button")
+        q.assertCondition("the screenshot shows a stopwatch with a zero value and a green start button")
     }
     func test_safariApp_openURL() throws {
         let app = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
@@ -198,6 +204,7 @@ final class qaml_sanity_tests: XCTestCase {
         q.waitUntil("The screen shows a weather app")
         q.execute("tap the show map button")
         q.assertCondition("the screenshot shows a map view of a weather app")
+        q.execute("tap the done button")
         
     }
 }
