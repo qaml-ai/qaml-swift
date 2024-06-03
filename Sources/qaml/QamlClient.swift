@@ -31,7 +31,7 @@ public class QamlClient {
 
     func reportError(reason: String) {
         dumpAccessibilityElements()
-        fail(reason)
+        XCTFail(reason)
     }
 
     func elementTypeString(_ type: XCUIElement.ElementType) -> String {
@@ -329,12 +329,14 @@ public class QamlClient {
             do {
                 request.httpBody = try JSONEncoder().encode(payload)
             } catch {
-                fail("Failed to encode payload: \(error)")
+                XCTFail("Failed to encode payload: \(error)")
+                return
             }
 
             let (data, httpResponse, error) = synchronousDataTaskWithRunLoop(urlRequest: request)
             if let error {
-                fail(error.localizedDescription)
+                XCTFail(error.localizedDescription)
+                return
             }
 
             struct Action: Decodable {
@@ -347,9 +349,11 @@ public class QamlClient {
             } catch {
                 do {
                     let failMessage = try JSONDecoder().decode(QamlErrorResponse.self, from: data!)
-                    fail("API Error: \(failMessage.error)")
+                    XCTFail("API Error: \(failMessage.error)")
+                    return
                 } catch {
-                    fail("Failed to decode response: \(error)")
+                    XCTFail("Failed to decode response: \(error)")
+                    return
                 }
             }
             // arguments is a json encoded string
@@ -359,7 +363,8 @@ public class QamlClient {
                 do {
                     arguments = try JSONSerialization.jsonObject(with: action.arguments.data(using: .utf8)!, options: []) as! [String: Any]
                 } catch {
-                    fail("Failed to decode arguments: \(error)")
+                    XCTFail("Failed to decode arguments: \(error)")
+                    return
                 }
                 os_log("Command: %@ - Executing action: %@ with arguments: %@", log: logger, type: .info, command, action.name, arguments)
                 switch action.name {
@@ -440,7 +445,7 @@ public class QamlClient {
             do {
                 try _assertCondition(assertion, activity: activity)
             } catch {
-                fail("\(error)")
+                XCTFail("\(error)")
             }
         }
     }
@@ -478,16 +483,19 @@ public class QamlClient {
         do {
             request.httpBody = try JSONEncoder().encode(payload)
         } catch {
-            fail("Failed to encode payload: \(error)")
+            XCTFail("Failed to encode payload: \(error)")
+            return
         }
 
         let (data, httpResponse, error) = synchronousDataTaskWithRunLoop(urlRequest: request)
         if let error {
-            fail(error.localizedDescription)
+            XCTFail(error.localizedDescription)
+            return
         }
 
         guard let data = data else {
-            fail("No data received from QAML API")
+            XCTFail("No data received from QAML API")
+            return
         }
 
         struct AssertionResponse: Decodable {
@@ -503,10 +511,11 @@ public class QamlClient {
         } catch {
             do {
                 let failMessage = try JSONDecoder().decode(QamlErrorResponse.self, from: data)
-                fail("API Error: \(failMessage.error)")
+                XCTFail("API Error: \(failMessage.error)")
             } catch {
-                fail("Failed to decode response: \(error)")
+                XCTFail("Failed to decode response: \(error)")
             }
+            return
         }
         guard let result = arguments["result"] as? Bool else {
             throw QAMLException(reason: "Invalid response from QAML API")
@@ -534,7 +543,7 @@ public class QamlClient {
                     }
                 }
             } catch {
-                fail("\(error)")
+                XCTFail("\(error)")
             }
         }
     }
@@ -610,6 +619,53 @@ public class QamlClient {
         }
         element.typeText(text)
     }
+    
+    func synchronousDataTaskWithRunLoop(urlRequest: URLRequest) -> (Data?, URLResponse?, Error?) {
+        var data: Data?
+        var response: URLResponse?
+        var error: Error?
+        var done = false
+        let task = URLSession.shared.dataTask(with: urlRequest) { (taskData, taskResponse, taskError) in
+            data = taskData
+            response = taskResponse
+            error = taskError
+            done = true
+        }
+        task.resume()
+        let runLoop = CFRunLoopGetCurrent()
+        let allModes = CFRunLoopCopyAllModes(runLoop) as! [CFString]
+        while !done {
+            for mode in allModes {
+                if mode == ("kCFRunLoopDefaultMode" as CFString) {
+                    continue
+                }
+                CFRunLoopRunInMode(CFRunLoopMode(mode), 0.1, true)
+                if done {
+                    break
+                }
+            }
+        }
+        return (data, response, error)
+    }
+    
+    public enum Direction: String {
+        case left
+        case down
+        case up
+        case right
+    }
+    public func scroll(direction: Direction, until condition: String) {
+        XCTContext.runActivity(named: "Scrolling \(direction) until \(condition)") { activity in
+            while true {
+                do {
+                    try _assertCondition(condition, activity: activity)
+                    break
+                } catch {
+                    scroll(direction: direction.rawValue)
+                }
+            }
+        }
+    }
 
     func createXCDeviceEvent(page: UInt32, usage: UInt32, duration: TimeInterval) -> AnyObject? {
         guard let xcDeviceEventClass: AnyObject.Type = NSClassFromString("XCDeviceEvent") else {
@@ -652,40 +708,7 @@ public class QamlClient {
         }
     }
 
-    // SYNC
-    func synchronousDataTaskWithRunLoop(urlRequest: URLRequest) -> (Data?, URLResponse?, Error?) {
-        var data: Data?
-        var response: URLResponse?
-        var error: Error?
-        var done = false
-        let task = URLSession.shared.dataTask(with: urlRequest) { (taskData, taskResponse, taskError) in
-            data = taskData
-            response = taskResponse
-            error = taskError
-            done = true
-        }
-        task.resume()
-        let runLoop = CFRunLoopGetCurrent()
-        let allModes = CFRunLoopCopyAllModes(runLoop) as! [CFString]
-        while !done {
-            for mode in allModes {
-                if mode == ("kCFRunLoopDefaultMode" as CFString) {
-                    continue
-                }
-                CFRunLoopRunInMode(CFRunLoopMode(mode), 0.1, true)
-                if done {
-                    break
-                }
-            }
-        }
-        return (data, response, error)
-    }
 
-}
-
-func fail(_ message: String) -> Never {
-    XCTFail(message)
-    fatalError(message)
 }
 
 struct QamlErrorResponse: Codable {
