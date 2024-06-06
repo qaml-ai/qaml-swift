@@ -269,7 +269,7 @@ public class QamlClient {
                 width: Int(element.frame.width * windowScale),
                 height: Int(element.frame.height * windowScale),
                 type: elementTypeString(element.elementType),
-                label: element.label,
+                label: element.label.isEmpty ? element.identifier : element.label,
                 value: element.value != nil ? String(describing: element.value!) : nil,
                 placeholder: element.placeholderValue
             )
