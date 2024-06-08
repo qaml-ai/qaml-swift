@@ -9,10 +9,9 @@ public class QamlClient {
     public var systemPrompt = ""
     public var shouldUseAccessibilityElements: Bool
     public var autoDelay: TimeInterval = 0.0
+    public var apiBaseURL = "https://api.camelqa.com/v1"
 
     var logger = OSLog(subsystem: "com.qaml", category: "QamlClient")
-
-    let apiBaseURL = "https://api.camelqa.com/v1"
 
     public init(apiKey: String, app: XCUIApplication, useAccessibilityElements: Bool = true) {
         self.apiKey = apiKey
