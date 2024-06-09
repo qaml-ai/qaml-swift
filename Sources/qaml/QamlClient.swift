@@ -133,6 +133,96 @@ public class QamlClient {
             }
         }
     }
+    
+    public enum SearchMode {
+        case screenShot
+        case elementList
+    }
+    // get value returns a string
+    public func getValue(searchFor prompt: String, mode: SearchMode = .elementList) -> String {
+        var returnValue = ""
+        // MARK: payload construction
+        XCTContext.runActivity(named: "Get value: \(prompt)") { activity in
+            if autoDelay > 0 {
+                sleep(duration: autoDelay)
+            }
+            guard var accessibilityElements = try? getAccessibilityElements() else {
+                return
+            }
+            var isKeyboardShown = false
+            accessibilityElements = accessibilityElements.filter { element in
+                if element.type == "keyboard" || element.type == "key" {
+                    isKeyboardShown = true
+                    return false
+                }
+                return true
+            }
+            let windowSize = getWindowSize()
+            
+            let model: String
+            switch mode {
+            case .elementList:
+                model = "gpt-3.5-turbo"
+            case .screenShot:
+                model = "gpt-4o"
+            }
+            
+            let payload = [
+                "action": prompt,
+                "model": model,
+                "screen_size": ["width": Int(windowSize.width), "height": Int(windowSize.height)],
+                "screenshot": getScreenshot(activity),
+                "platform": "iOS", // Set this as a header so we never forget it?
+                "extra_context": systemPrompt,
+                "accessibility_elements": accessibilityElements.map(\.dictionaryRepresentation),
+                "is_keyboard_shown": isKeyboardShown
+            ]
+
+            let url = URL(string: "\(apiBaseURL)/execute")!
+            guard let request = try? constructAPIRequest(url: url, payload: payload) else {
+                return
+            }
+            // MARK: sending the request
+            let (data, httpResponse, error) = synchronousDataTaskWithRunLoop(urlRequest: request)
+            if let error {
+                XCTFail(error.localizedDescription)
+                return
+            }
+            // MARK: start of handling response
+            guard let response = try? JSONDecoder().decode([ActionResponse].self, from: data) else {
+                do {
+                    let failMessage = try JSONDecoder().decode(QamlErrorResponse.self, from: data)
+                    XCTFail("API Error: \(failMessage.error)")
+                    return
+                } catch {
+                    XCTFail("Failed to decode response: \(error)")
+                    return
+                }
+            }
+            // arguments is a json encoded string
+            for action in response {
+                // Decode the arguments
+                let arguments: [String: Any]
+                do {
+                    arguments = try JSONSerialization.jsonObject(with: action.arguments.data(using: .utf8)!, options: []) as! [String: Any]
+                } catch {
+                    XCTFail("Failed to decode arguments: \(error)")
+                    return
+                }
+                os_log("Command: %@ - Executing action: %@ with arguments: %@", log: logger, type: .info, prompt, action.name, arguments)
+                
+                // MARK: handling the action
+                switch action.name {
+                case "get_value":
+                    returnValue = arguments["return_value"] as! String
+                default:
+                    fatalError("Invalid action: \(action.name)")
+                }
+            }
+        }
+        return returnValue
+    }
+
 
     public func execute(_ command: String) {
         // MARK: payload construction
