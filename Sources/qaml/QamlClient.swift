@@ -178,7 +178,7 @@ public class QamlClient {
                 "is_keyboard_shown": isKeyboardShown
             ]
 
-            let url = URL(string: "\(apiBaseURL)/execute")!
+            let url = URL(string: "\(apiBaseURL)/get-value")!
             guard let request = try? constructAPIRequest(url: url, payload: payload) else {
                 return
             }
