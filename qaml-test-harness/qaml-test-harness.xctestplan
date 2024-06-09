@@ -7,7 +7,7 @@
         "environmentVariableEntries" : [
           {
             "key" : "QAML_API_KEY",
-            "value" : "$(QAML_API_KEY)"
+            "value" : "sk-cde8164da4791817f25eaf0abaae3e49cd04c0940f7b5cf4f3a2fc58dff71e8a"
           }
         ],
         "targetForVariableExpansion" : {
@@ -20,7 +20,10 @@
   ],
   "defaultOptions" : {
     "environmentVariableEntries" : [
-
+      {
+        "key" : "QAML_API_KEY",
+        "value" : "sk-cde8164da4791817f25eaf0abaae3e49cd04c0940f7b5cf4f3a2fc58dff71e8a"
+      }
     ],
     "targetForVariableExpansion" : {
       "containerPath" : "container:qaml-test-harness.xcodeproj",

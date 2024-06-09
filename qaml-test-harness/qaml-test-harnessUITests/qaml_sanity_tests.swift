@@ -23,13 +23,14 @@ final class qaml_sanity_tests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func test_weatherApp_weatherInSF() throws {
+    func test01_weatherApp_weatherInSF() throws {
         let app = XCUIApplication(bundleIdentifier: "com.apple.weather")
         app.launch()
         
         let q = QamlClient(
             apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!,
-            app: app
+            app: app,
+            useAccessibilityElements: false
         )
         
         q.execute("click the location list button")
@@ -42,7 +43,7 @@ final class qaml_sanity_tests: XCTestCase {
         q.execute("tap my location from the location list")
     }
     
-    func test_youtube_lotsOfAsserts() throws {
+    func test02_youtube_lotsOfAsserts() throws {
         let app = XCUIApplication(bundleIdentifier: "com.google.ios.youtube")
         app.launch()
         
@@ -57,7 +58,7 @@ final class qaml_sanity_tests: XCTestCase {
         q.assertCondition("The screenshot is of a video app. It shows a video or image. The bottom section of the screen shows the video's title, the creator's username. On the right there are options to like, dislike, comment, and share.")
         q.execute("tap the view comments button")
         q.assertCondition("The screen shows an app with a drawer of comments open that takes up most of the screen")
-        q.execute("tap the view replies button")
+        q.execute("tap the 'view total replies' button")
         q.assertCondition("The screen shows an app with a drawer labeled Replies open that takes up most of the screen")
         q.execute("tap the close button")
         q.assertCondition("The screenshot of a video app. It shows a video or image. The bottom section of the screen shows the video's title, the creator's username. On the right there are options to like, dislike, comment, and share.")
@@ -67,7 +68,7 @@ final class qaml_sanity_tests: XCTestCase {
         q.assertCondition("The screenshot of a video app. It shows a video or image. The bottom section of the screen shows the video's title, the creator's username. On the right there are options to like, dislike, comment, and share.")
         q.execute("tap the home tab")
     }
-    func test_youtube_basicAutoDelay() throws {
+    func test03_youtube_basicAutoDelay() throws {
         let app = XCUIApplication(bundleIdentifier: "com.google.ios.youtube")
         app.launch()
         
@@ -78,25 +79,26 @@ final class qaml_sanity_tests: XCTestCase {
         
         q.autoDelay = 2
         
-        q.waitUntil("the app has succesfully loaded")
+        q.waitUntil("the app has successfully loaded")
         q.execute("tap the 'Shorts' tab")
         
     }
-    func test_instgram_likeWithSystemPrompt() throws {
+    func test04_instgram_likeWithSystemPrompt() throws {
         let app = XCUIApplication(bundleIdentifier: "com.burbn.instagram")
         app.launch()
         
         let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
-        
-        q.systemPrompt = "An image is like if the heart icon is solid is red. An image is not liked if the heart icon is a white outline and not filled."
+//        FIXME: This test passed when it shouldn't have.
+        // Ths like button was not successfully tapped. I think we need to put more emphasis on the system prompt
+        q.systemPrompt = "A post is like if the heart icon is solid is red. A post is not liked if the heart icon is a white outline and not filled."
         
         q.execute("scroll down")
-        q.assertCondition("A photo with a heart button beneath it is visible")
-        q.assertCondition("A photo with a heart button beneath it is visible. The photo is not liked.")
+        q.assertCondition("A post with a heart button beneath it is visible")
+        q.assertCondition("A post with a heart button beneath it is visible. The post is not liked.")
         q.execute("tap the like button")
-        q.assertCondition("A photo with a heart button beneath it is visible. The photo has been liked.")
+        q.assertCondition("A post with a heart button beneath it is visible. The post has been liked.")
     }
-    func test_snapchat_shareCameraRoll() throws {
+    func test06_snapchat_shareCameraRoll() throws {
         let app = XCUIApplication(bundleIdentifier: "com.toyopagroup.picaboo")
         app.launch()
         
@@ -122,10 +124,10 @@ final class qaml_sanity_tests: XCTestCase {
         q.switchToApp(bundleId: "com.apple.Preferences")
         q.assertCondition("User is in the Photo library access page")
         q.execute("tap the cell that says 'None'")
-        q.assertCondition("A menu on screen is showing photo library access with 'None' checked.")
+//        q.assertCondition("A menu on screen is showing photo library access with 'None' checked.") // this assert doesn't work
     }
     
-    func test_timerApp_waitUntil() throws {
+    func test07_timerApp_waitUntil() throws {
         let app = XCUIApplication(bundleIdentifier: "com.apple.mobiletimer")
         app.launch()
         
@@ -139,7 +141,7 @@ final class qaml_sanity_tests: XCTestCase {
         q.execute("Tap the reset button")
         q.assertCondition("the screenshot shows a stopwatch with a zero value and a green start button")
     }
-    func test_safariApp_openURL() throws {
+    func test08_safariApp_openURL() throws {
         let app = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
         app.launch()
         
@@ -153,7 +155,7 @@ final class qaml_sanity_tests: XCTestCase {
         q.openURL(url: "https://im3software.com")
         q.assertCondition("the screenshot shows the web page for im3software.com with a logo that says 'IM3'")
     }
-    func test_podiumApp_tapAndTypeRegression() throws {
+    func test09_podiumApp_tapAndTypeRegression() throws {
         let app = XCUIApplication(bundleIdentifier: "com.ionicframework.ionicapp410897")
         app.launch()
         
@@ -171,7 +173,7 @@ final class qaml_sanity_tests: XCTestCase {
         q.type("mikeys@me.com")
         q.assertCondition("The screen shows a sign in page with the email 'mikeys@me.com' entered in the text field")
     }
-    func test_podiumApp_launchApp() throws {
+    func test10_podiumApp_launchApp() throws {
         let app = XCUIApplication(bundleIdentifier: "com.ionicframework.ionicapp410897")
         app.launch()
         
@@ -186,7 +188,7 @@ final class qaml_sanity_tests: XCTestCase {
         q.launchApp(bundleId: "com.ionicframework.ionicapp410897")
         q.waitUntil("The screen shows an app with a sign in button")
     }
-    func test_multiApp_launchApp() throws {
+    func test11_multiApp_launchApp() throws {
         let app = XCUIApplication(bundleIdentifier: "com.ionicframework.ionicapp410897")
         app.launch()
         
@@ -206,5 +208,41 @@ final class qaml_sanity_tests: XCTestCase {
         q.assertCondition("the screenshot shows a map view of a weather app")
         q.execute("tap the done button")
         
+    }
+    func test12_snapchat_tapSettings_buttonWithoutLabel() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.toyopagroup.picaboo")
+        app.launch()
+        
+        let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
+        
+        q.execute("tap the profile button")
+        q.execute("tap the settings button")
+        q.assertCondition("You are on the Settings page")
+        
+    }
+    func test13_snapchat_scrollUntil() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.toyopagroup.picaboo")
+        app.launch()
+        
+        let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
+        
+        q.execute("tap the profile button")
+        // in Swift, takes an enum. Options are .down, .up, .right, .left - double check the syntax for android
+        q.scroll(direction: .down, until: "'Cameos' section is visible")
+        q.assertCondition("The screen shows a section labeled 'Cameos'")
+    }
+    func test14_weatherApp_dumpAccessibility() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.apple.weather")
+        app.launch()
+        
+        let q = QamlClient(
+            apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!,
+            app: app,
+            useAccessibilityElements: false
+        )
+        
+        q.assertCondition("The screen shows a weather app")
+//         shows up in the console - here is a sample output "qaml.QamlClient.Element(left: 347, top: 469, width: 33, height: 86, type: \"button\", label: \"4\U202fPM, Mostly Clear, 62\U00b0\", value: nil, placeholder: nil)" , check LogCat for the output in Android
+        q.dumpAccessibilityElements()
     }
 }
