@@ -280,7 +280,8 @@ public class QamlClient {
     public func type(_ inputString: String) {
         typeText(text: inputString)
     }
-
+    
+    // MARK: constructing the payload
     public func execute(_ command: String) {
         XCTContext.runActivity(named: "Execute command: \(command)") { activity in
             if autoDelay > 0 {
@@ -331,13 +332,13 @@ public class QamlClient {
                 XCTFail("Failed to encode payload: \(error)")
                 return
             }
-
+            // MARK: sending the request
             let (data, httpResponse, error) = synchronousDataTaskWithRunLoop(urlRequest: request)
             if let error {
                 XCTFail(error.localizedDescription)
                 return
             }
-
+            // MARK: handling the response
             struct Action: Decodable {
                 let name: String
                 let arguments: String
@@ -366,6 +367,8 @@ public class QamlClient {
                     return
                 }
                 os_log("Command: %@ - Executing action: %@ with arguments: %@", log: logger, type: .info, command, action.name, arguments)
+                
+                // MARK: handling the action
                 switch action.name {
                 case "type_text":
                     let text = arguments["text"] as! String
@@ -377,7 +380,7 @@ public class QamlClient {
                 case "long_press":
                     let x = Int(arguments["x"] as! Double)
                     let y = Int(arguments["y"] as! Double)
-                    app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: x, dy: y)).press(forDuration: 1.5)
+                    app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: x, dy: y)).press(forDuration: 2)
                 case "swipe":
                     let direction = arguments["direction"] as! String
                     swipe(direction: direction)
@@ -420,6 +423,7 @@ public class QamlClient {
         sleep(duration: 1)
     }
 
+// not support on Xcode lower than 14.3 or iOS 15.0
 #if compiler(>=5.8)
     public func openURL(url: String) {
         XCUIDevice.shared.system.open(URL(string: url)!)
@@ -449,7 +453,7 @@ public class QamlClient {
         }
     }
 
-    public func _assertCondition(_ assertion: String, activity: XCTActivity) throws {
+    func _assertCondition(_ assertion: String, activity: XCTActivity) throws {
         sleep(duration: autoDelay + 0.5)
         struct AssertionRequest: Encodable {
             struct Size: Encodable {
@@ -573,7 +577,12 @@ public class QamlClient {
     }
 
     func drag(startX: Int, startY: Int, endX: Int, endY: Int) {
-        app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: startX, dy: startY)).press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: endX, dy: endY)))
+        app.windows.firstMatch
+            .coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+            .withOffset(CGVector(dx: startX, dy: startY))
+            .press(forDuration: 0.1,
+                   thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+                .withOffset(CGVector(dx: endX, dy: endY)))
     }
 
     func swipe(direction: String) {
