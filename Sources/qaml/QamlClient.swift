@@ -10,6 +10,7 @@ public class QamlClient {
     public var shouldUseAccessibilityElements: Bool
     public var autoDelay: TimeInterval = 0.0
     public var apiBaseURL = "https://api.camelqa.com/v1"
+    public var alertHandler = "select the most permissive option. DO NOT select options related to precision"
 
     var logger = OSLog(subsystem: "com.qaml", category: "QamlClient")
 
@@ -44,33 +45,53 @@ public class QamlClient {
     public func type(_ inputString: String) {
         typeText(text: inputString)
     }
+    
+    func handleAllSpringboardAlerts() {
+        let options = XCTExpectedFailure.Options()
+        options.isStrict = false
+        while (self.springboard.alerts.count > 0) {
+            do {
+                guard let alert = self.springboard.alerts.allElementsBoundByAccessibilityElement.first else { continue }
+                let alertSnapshot = try alert.snapshot()
+                var elements = [alertSnapshot]
+                var buttonElements: [Element] = []
+                var staticTextLabels: [String] = []
 
-    public var acceptAllAlertsHandler: (XCUIElement) -> Bool {
-        get {
-            customAlertHandler(instructions: "select the most permissive option to dismiss the alert")
+                while !elements.isEmpty {
+                    let element = elements.removeLast()
+                    let elementDict = element.dictionaryRepresentation
+                    // Check if the element's absolute frame intersects with the main app snapshot frame and if it is enabled.
+                    if element.elementType == .staticText {
+                        staticTextLabels.append(element.label)
+                    } else if element.elementType == .button {
+                        buttonElements.append(element.toElement)
+                    }
+                    elements.append(contentsOf: element.children)
+                }
+
+                if buttonElements.count == 1 {
+                    alert.buttons.firstMatch.tap()
+                    continue
+                }
+
+                let buttonElement = try self.selectElement(instructions: self.alertHandler, context: staticTextLabels.joined(separator: "\n"), elements: buttonElements)
+                let button = alert.buttons[buttonElement.label]
+                if button.exists {
+                    button.tap()
+                }
+            } catch {
+                print(error)
+                // noop
+            }
         }
     }
 
-    public func customAlertHandler(instructions: String) -> ((XCUIElement) -> Bool) {
+    internal func customAlertHandler() -> ((XCUIElement) -> Bool) {
         return { element in
             guard element.elementType == .alert else {
                 return false
             }
-            let options = XCTExpectedFailure.Options()
-            options.isStrict = false
-            while (self.springboard.alerts.count > 0) {
-                XCTExpectFailure("Tapping alert (this is expected to show as a failure sometimes)", options: options) {
-                    guard let alert = self.springboard.alerts.allElementsBoundByAccessibilityElement.first else { return }
-                    let buttons = alert.buttons.allElementsBoundByAccessibilityElement
-                    if buttons.count == 1 {
-                        buttons.first?.tap()
-                        return
-                    }
-                    let context = alert.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: "/n")
-                    let button = try? self.selectElement(instructions: instructions, context: context, elements: buttons)
-                    button?.tap()
-                }
-            }
+            self.handleAllSpringboardAlerts()
             return true
         }
     }
@@ -271,10 +292,12 @@ public class QamlClient {
 
     func getAccessibilityElements() throws -> [Element] {
         // First check springboard for alerts
-        let springboardAlerts = springboard.alerts
         let springboardNavigationbars = springboard.navigationBars
         let snapshot: XCUIElementSnapshot
-        if springboardAlerts.count > 0 || springboardNavigationbars.count > 0 {
+        while springboard.alerts.count > 0 {
+            handleAllSpringboardAlerts()
+        }
+        if springboardNavigationbars.count > 0 {
             snapshot = try springboard.snapshot()
         } else {
             snapshot = try app.snapshot()
@@ -338,6 +361,20 @@ public class QamlClient {
         return request
     }
 
+    func constructTypedAPIRequest(url: URL, payload: Encodable) throws -> URLRequest {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        do {
+            request.httpBody = try JSONEncoder().encode(payload)
+        } catch {
+            XCTFail("Failed to encode payload: \(error)")
+            throw QAMLException(reason: "Error encoding data")
+        }
+        return request
+    }
+
     private func getScreenshot(_ activity: XCTActivity) -> String {
         let screenshot = app.screenshot()
         let attachment = XCTAttachment(screenshot: screenshot)
@@ -393,26 +430,43 @@ public class QamlClient {
         }
     }
 
-    func selectElement(instructions: String, context: String, elements: [XCUIElement]) throws -> XCUIElement {
-        let selectElementTool: [String: Any] = [
-            "name": "selectElement",
-            "arguments": [
+    struct Tool: Encodable {
+        let name: String
+        let description: String
+        let arguments: [String: [String: String]]
+        let required: [String]
+    }
+
+    struct CallPayload: Encodable {
+        let systemPrompt: String
+        let elements: [Element]
+        let tools: [Tool]
+        let base64Image: String? = nil
+        let shouldUseVisionElements: Bool = false
+    }
+
+    func selectElement(instructions: String, context: String, elements: [Element]) throws -> Element {
+        let selectElementTool = Tool(
+            name: "selectElement",
+            description: "select the specified element",
+            arguments: [
                 "elementID": [
                     "type": "integer",
                     "description": "the ID of the element to select"
                 ]
-            ]
-        ]
-        let systemPrompt = ""
-        let prompt = ""
+            ],
+            required: ["elementID"]
+        )
 
-        let payload = [
-            "systemPrompt": systemPrompt,
-            "prompt": prompt,
-        ]
+        let systemPrompt = "INSTRUCTIONS: \(instructions). Use the instructions to select the best element out of the provided element list. Window content: \(context). INSTRUCTIONS: \(instructions)"
+
+        let payload = CallPayload(
+            systemPrompt: systemPrompt,
+            elements: elements,
+            tools: [selectElementTool])
 
         let url = URL(string: "\(apiBaseURL)/call")!
-        let request = try constructAPIRequest(url: url, payload: payload)
+        let request = try constructTypedAPIRequest(url: url, payload: payload)
 
         let (data, httpResponse, error) = synchronousDataTaskWithRunLoop(urlRequest: request)
         if let error {
@@ -420,12 +474,18 @@ public class QamlClient {
             throw error
         }
 
-        let actionResponse = try JSONDecoder().decode([ActionResponse].self, from: data)
-        let arguments = try JSONSerialization.jsonObject(with: actionResponse[0].arguments.data(using: .utf8)!) as! [String: Any]
+        struct CallEndpointResponse: Decodable {
+            let toolCalls: [ActionResponse]
+            let elements: [Element]
+        }
+
+        print(String(data: data, encoding: .utf8))
+        let actionResponse = try JSONDecoder().decode(CallEndpointResponse.self, from: data)
+        let arguments = try JSONSerialization.jsonObject(with: actionResponse.toolCalls[0].arguments.data(using: .utf8)!) as! [String: Any]
         guard let elementIndex = arguments["elementID"] as? Int else {
             throw QAMLException(reason: "Invalid response from QAML API")
         }
-        return elements[elementIndex]
+        return actionResponse.elements[elementIndex]
     }
 
 
@@ -491,6 +551,9 @@ public class QamlClient {
         var error: Error?
         var done = false
         let task = URLSession.shared.dataTask(with: urlRequest) { (taskData, taskResponse, taskError) in
+            print(taskResponse)
+            print(taskError)
+            print(taskData)
             data = taskData
             response = taskResponse
             error = taskError
@@ -554,7 +617,6 @@ public class QamlClient {
         }
     }
 
-
 }
 
 public struct QamlErrorResponse: Codable {
@@ -566,7 +628,7 @@ struct ActionResponse: Decodable {
     let arguments: String
 }
 
-struct Element {
+struct Element: Codable {
     let left: Int
     let top: Int
     let width: Int
@@ -682,5 +744,22 @@ func elementTypeString(_ type: XCUIElement.ElementType) -> String {
     case .tab: return "tab"
     case .touchBar: return "touchBar"
     case .statusItem: return "statusItem"
+    }
+}
+
+extension XCUIElementSnapshot {
+    var toElement: Element {
+        get {
+            return Element(
+                left: Int(self.frame.minX),
+                top: Int(self.frame.minY),
+                width: Int(self.frame.width),
+                height: Int(self.frame.height),
+                type: elementTypeString(self.elementType),
+                label: self.label.isEmpty ? self.identifier : self.label,
+                value: self.value != nil ? String(describing: self.value!) : nil,
+                placeholder: self.placeholderValue
+            )
+        }
     }
 }
