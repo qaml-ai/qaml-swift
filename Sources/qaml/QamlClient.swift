@@ -14,32 +14,18 @@ public class QamlClient {
 
     var logger = OSLog(subsystem: "com.qaml", category: "QamlClient")
 
+    // MARK: Public API - public functions people can call directly
     public init(apiKey: String, app: XCUIApplication, useAccessibilityElements: Bool = true) {
         self.apiKey = apiKey
         self.app = app
         self.shouldUseAccessibilityElements = useAccessibilityElements
     }
 
-    // MARK: Public API
-
     public enum Direction: String {
         case left
         case down
         case up
         case right
-    }
-
-    public func scroll(direction: Direction, until condition: String) {
-        XCTContext.runActivity(named: "Scrolling \(direction) until \(condition)") { activity in
-            while true {
-                do {
-                    try _assertCondition(condition, activity: activity)
-                    break
-                } catch {
-                    scroll(direction: direction.rawValue)
-                }
-            }
-        }
     }
 
     public func type(_ inputString: String) {
@@ -72,6 +58,38 @@ public class QamlClient {
                     elements.append(contentsOf: element.children)
                 }
 
+<<<<<<< get-value-client
+    public func dumpAccessibilityElements() {
+        let elements = try! getAccessibilityElements()
+        os_log("Accessibility elements: %@", log: logger, type: .debug, elements)
+    }
+
+    public func switchToApp(bundleId: String) {
+        let newApp = XCUIApplication(bundleIdentifier: bundleId)
+        newApp.activate()
+        app = newApp
+        sleep(duration: 1)
+    }
+
+    public func launchApp(bundleId: String) {
+        let newApp = XCUIApplication(bundleIdentifier: bundleId)
+        newApp.launch()
+        app = newApp
+        sleep(duration: 1)
+    }
+
+    // not support on Xcode lower than 14.3 or iOS 15.0
+    #if compiler(>=5.8)
+    public func openURL(url: String) {
+        XCUIDevice.shared.system.open(URL(string: url)!)
+        sleep(duration: 1)
+    }
+    #endif
+    
+    public var acceptAllAlertsHandler: (XCUIElement) -> Bool {
+        get {
+            customAlertHandler(instructions: "select the most permissive option to dismiss the alert")
+=======
                 if buttonElements.count == 1 {
                     alert.buttons.firstMatch.tap()
                     continue
@@ -86,6 +104,7 @@ public class QamlClient {
                 print(error)
                 // noop
             }
+>>>>>>> next
         }
     }
 
@@ -98,8 +117,145 @@ public class QamlClient {
             return true
         }
     }
+    
+    public func assertCondition(_ assertion: String) {
+       XCTContext.runActivity(named: "Assert Condition: \(assertion)") { activity in
+           do {
+               try _assertCondition(assertion, activity: activity)
+           } catch {
+               XCTFail("\(error)")
+           }
+       }
+    }
+
+    public func waitUntil(_ condition: String, timeout: TimeInterval = 10) {
+       let start = Date()
+       XCTContext.runActivity(named: "Wait Until \(condition)") { activity in
+           do {
+               while true {
+                   if Date().timeIntervalSince(start) > timeout {
+                       try _assertCondition(condition, activity: activity)
+                       return
+                   }
+                   do {
+                       os_log("Waiting for condition: %@", log: logger, type: .info, condition)
+                       try _assertCondition(condition, activity: activity)
+                       return
+                   } catch {
+                       os_log("Condition %@ not met yet. Retrying...", log: logger, type: .info, condition)
+                   }
+               }
+           } catch {
+               XCTFail("\(error)")
+           }
+       }
+    }
+    
+    public func scroll(direction: Direction, until condition: String) {
+        XCTContext.runActivity(named: "Scrolling \(direction) until \(condition)") { activity in
+            while true {
+                do {
+                    try _assertCondition(condition, activity: activity)
+                    break
+                } catch {
+                    scroll(direction: direction.rawValue)
+                }
+            }
+        }
+    }
+    
+    public enum SearchMode {
+        case screenShot
+        case elementList
+    }
+    // get value returns a string
+    public func getValue(searchFor prompt: String, mode: SearchMode = .elementList) -> String {
+        var returnValue = ""
+        // MARK: payload construction
+        XCTContext.runActivity(named: "Get value: \(prompt)") { activity in
+            if autoDelay > 0 {
+                sleep(duration: autoDelay)
+            }
+            guard var accessibilityElements = try? getAccessibilityElements() else {
+                return
+            }
+            var isKeyboardShown = false
+            accessibilityElements = accessibilityElements.filter { element in
+                if element.type == "keyboard" || element.type == "key" {
+                    isKeyboardShown = true
+                    return false
+                }
+                return true
+            }
+            let windowSize = getWindowSize()
+            
+            let model: String
+            switch mode {
+            case .elementList:
+                model = "gpt-3.5-turbo"
+            case .screenShot:
+                model = "gpt-4o"
+            }
+            
+            let payload = [
+                "action": prompt,
+                "model": model,
+                "screen_size": ["width": Int(windowSize.width), "height": Int(windowSize.height)],
+                "screenshot": getScreenshot(activity),
+                "platform": "iOS", // Set this as a header so we never forget it?
+                "extra_context": systemPrompt,
+                "accessibility_elements": accessibilityElements.map(\.dictionaryRepresentation),
+                "is_keyboard_shown": isKeyboardShown
+            ]
+
+            let url = URL(string: "\(apiBaseURL)/get-value")!
+            guard let request = try? constructAPIRequest(url: url, payload: payload) else {
+                return
+            }
+            // MARK: sending the request
+            let (data, httpResponse, error) = synchronousDataTaskWithRunLoop(urlRequest: request)
+            if let error {
+                XCTFail(error.localizedDescription)
+                return
+            }
+            // MARK: start of handling response
+            guard let response = try? JSONDecoder().decode([ActionResponse].self, from: data) else {
+                do {
+                    let failMessage = try JSONDecoder().decode(QamlErrorResponse.self, from: data)
+                    XCTFail("API Error: \(failMessage.error)")
+                    return
+                } catch {
+                    XCTFail("Failed to decode response: \(error)")
+                    return
+                }
+            }
+            // arguments is a json encoded string
+            for action in response {
+                // Decode the arguments
+                let arguments: [String: Any]
+                do {
+                    arguments = try JSONSerialization.jsonObject(with: action.arguments.data(using: .utf8)!, options: []) as! [String: Any]
+                } catch {
+                    XCTFail("Failed to decode arguments: \(error)")
+                    return
+                }
+                os_log("Command: %@ - Executing action: %@ with arguments: %@", log: logger, type: .info, prompt, action.name, arguments)
+                
+                // MARK: handling the action
+                switch action.name {
+                case "get_value":
+                    returnValue = arguments["return_value"] as! String
+                default:
+                    fatalError("Invalid action: \(action.name)")
+                }
+            }
+        }
+        return returnValue
+    }
+
 
     public func execute(_ command: String) {
+        // MARK: payload construction
         XCTContext.runActivity(named: "Execute command: \(command)") { activity in
             if autoDelay > 0 {
                 sleep(duration: autoDelay)
@@ -136,6 +292,7 @@ public class QamlClient {
                 XCTFail(error.localizedDescription)
                 return
             }
+            // MARK: start of handling response
             guard let response = try? JSONDecoder().decode([ActionResponse].self, from: data) else {
                 do {
                     let failMessage = try JSONDecoder().decode(QamlErrorResponse.self, from: data)
@@ -190,71 +347,11 @@ public class QamlClient {
                 case "report_error":
                     let reason = arguments["reason"] as! String
                     reportError(reason: reason)
-                case "assert":
-                    XCTAssert(arguments["condition"] as! Bool, arguments["message"] as! String)
+//                case "assert": -- testing if this breaks anything
+//                    XCTAssert(arguments["condition"] as! Bool, arguments["message"] as! String)
                 default:
                     fatalError("Invalid action: \(action.name)")
                 }
-            }
-        }
-    }
-
-    public func dumpAccessibilityElements() {
-        let elements = try! getAccessibilityElements()
-        os_log("Accessibility elements: %@", log: logger, type: .debug, elements)
-    }
-
-    public func switchToApp(bundleId: String) {
-        let newApp = XCUIApplication(bundleIdentifier: bundleId)
-        newApp.activate()
-        app = newApp
-        sleep(duration: 1)
-    }
-
-    public func launchApp(bundleId: String) {
-        let newApp = XCUIApplication(bundleIdentifier: bundleId)
-        newApp.launch()
-        app = newApp
-        sleep(duration: 1)
-    }
-
-// not support on Xcode lower than 14.3 or iOS 15.0
-#if compiler(>=5.8)
-    public func openURL(url: String) {
-        XCUIDevice.shared.system.open(URL(string: url)!)
-        sleep(duration: 1)
-    }
-#endif
-
-     public func assertCondition(_ assertion: String) {
-        XCTContext.runActivity(named: "Assert Condition: \(assertion)") { activity in
-            do {
-                try _assertCondition(assertion, activity: activity)
-            } catch {
-                XCTFail("\(error)")
-            }
-        }
-    }
-
-    public func waitUntil(_ condition: String, timeout: TimeInterval = 10) {
-        let start = Date()
-        XCTContext.runActivity(named: "Wait Until \(condition)") { activity in
-            do {
-                while true {
-                    if Date().timeIntervalSince(start) > timeout {
-                        try _assertCondition(condition, activity: activity)
-                        return
-                    }
-                    do {
-                        os_log("Waiting for condition: %@", log: logger, type: .info, condition)
-                        try _assertCondition(condition, activity: activity)
-                        return
-                    } catch {
-                        os_log("Condition %@ not met yet. Retrying...", log: logger, type: .info, condition)
-                    }
-                }
-            } catch {
-                XCTFail("\(error)")
             }
         }
     }
@@ -263,6 +360,7 @@ public class QamlClient {
         let reason: String
     }
 
+    // MARK: private/internal functions
     @MainActor
     func task(task: String, maxSteps: Int = 10) async throws {
         try XCTContext.runActivity(named: "Task: \(task)") { activity in
@@ -353,6 +451,7 @@ public class QamlClient {
         return accessibilityElements
     }
 
+    // convience function to send API request
     func constructAPIRequest(url: URL, payload: [String: Any]) throws -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
