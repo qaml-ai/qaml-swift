@@ -58,7 +58,23 @@ public class QamlClient {
                     elements.append(contentsOf: element.children)
                 }
 
-<<<<<<< get-value-client
+                if buttonElements.count == 1 {
+                    alert.buttons.firstMatch.tap()
+                    continue
+                }
+
+                let buttonElement = try self.selectElement(instructions: alertHandler, context: staticTextLabels.joined(separator: "\n"), elements: buttonElements)
+                let button = alert.buttons[buttonElement.label]
+                if button.exists {
+                    button.tap()
+                }
+            } catch {
+                print(error)
+                // noop
+            }
+        }
+    }
+
     public func dumpAccessibilityElements() {
         let elements = try! getAccessibilityElements()
         os_log("Accessibility elements: %@", log: logger, type: .debug, elements)
@@ -85,28 +101,6 @@ public class QamlClient {
         sleep(duration: 1)
     }
     #endif
-    
-    public var acceptAllAlertsHandler: (XCUIElement) -> Bool {
-        get {
-            customAlertHandler(instructions: "select the most permissive option to dismiss the alert")
-=======
-                if buttonElements.count == 1 {
-                    alert.buttons.firstMatch.tap()
-                    continue
-                }
-
-                let buttonElement = try self.selectElement(instructions: alertHandler, context: staticTextLabels.joined(separator: "\n"), elements: buttonElements)
-                let button = alert.buttons[buttonElement.label]
-                if button.exists {
-                    button.tap()
-                }
-            } catch {
-                print(error)
-                // noop
-            }
->>>>>>> next
-        }
-    }
 
     internal func customAlertHandler() -> ((XCUIElement) -> Bool) {
         return { element in

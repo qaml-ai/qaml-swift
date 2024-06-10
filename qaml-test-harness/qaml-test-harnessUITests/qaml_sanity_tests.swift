@@ -245,7 +245,6 @@ final class qaml_sanity_tests: XCTestCase {
 //         shows up in the console - here is a sample output "qaml.QamlClient.Element(left: 347, top: 469, width: 33, height: 86, type: \"button\", label: \"4\U202fPM, Mostly Clear, 62\U00b0\", value: nil, placeholder: nil)" , check LogCat for the output in Android
         q.dumpAccessibilityElements()
     }
-<<<<<<< get-value-client
     func test15_snapchat_longPress() throws {
         let app = XCUIApplication(bundleIdentifier: "com.toyopagroup.picaboo")
         app.launch()
@@ -288,9 +287,9 @@ final class qaml_sanity_tests: XCTestCase {
         let weatherdescription = q.getValue(searchFor: "The high tomorrow", mode: .screenShot)
         print("~~~~~~ value read from weatherdescription: ")
         print(weatherdescription)
-=======
+    }
     
-    func test15_interrupt_handler() throws {
+    func test18_interrupt_handler() throws {
         let app = XCUIApplication()
         app.resetAuthorizationStatus(for: .camera)
         app.resetAuthorizationStatus(for: .photos)
@@ -311,6 +310,5 @@ final class qaml_sanity_tests: XCTestCase {
 
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         XCTAssertEqual(springboard.alerts.count, 0)
->>>>>>> next
     }
 }
