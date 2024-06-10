@@ -32,6 +32,33 @@ public class QamlClient {
         typeText(text: inputString)
     }
     
+    public func dumpAccessibilityElements() {
+        let elements = try! getAccessibilityElements()
+        os_log("Accessibility elements: %@", log: logger, type: .debug, elements)
+    }
+
+    public func switchToApp(bundleId: String) {
+        let newApp = XCUIApplication(bundleIdentifier: bundleId)
+        newApp.activate()
+        app = newApp
+        sleep(duration: 1)
+    }
+
+    public func launchApp(bundleId: String) {
+        let newApp = XCUIApplication(bundleIdentifier: bundleId)
+        newApp.launch()
+        app = newApp
+        sleep(duration: 1)
+    }
+
+    // not support on Xcode lower than 14.3 or iOS 15.0
+    #if compiler(>=5.8)
+    public func openURL(url: String) {
+        XCUIDevice.shared.system.open(URL(string: url)!)
+        sleep(duration: 1)
+    }
+    #endif
+    
     func handleAllSpringboardAlerts() {
         guard let alertHandler = alertHandler else {
             return
@@ -74,33 +101,6 @@ public class QamlClient {
             }
         }
     }
-
-    public func dumpAccessibilityElements() {
-        let elements = try! getAccessibilityElements()
-        os_log("Accessibility elements: %@", log: logger, type: .debug, elements)
-    }
-
-    public func switchToApp(bundleId: String) {
-        let newApp = XCUIApplication(bundleIdentifier: bundleId)
-        newApp.activate()
-        app = newApp
-        sleep(duration: 1)
-    }
-
-    public func launchApp(bundleId: String) {
-        let newApp = XCUIApplication(bundleIdentifier: bundleId)
-        newApp.launch()
-        app = newApp
-        sleep(duration: 1)
-    }
-
-    // not support on Xcode lower than 14.3 or iOS 15.0
-    #if compiler(>=5.8)
-    public func openURL(url: String) {
-        XCUIDevice.shared.system.open(URL(string: url)!)
-        sleep(duration: 1)
-    }
-    #endif
 
     internal func customAlertHandler() -> ((XCUIElement) -> Bool) {
         return { element in
@@ -248,8 +248,8 @@ public class QamlClient {
     }
 
 
-    public func execute(_ command: String) {
-        // MARK: payload construction
+    // MARK: payload construction
+    public func execute(_ command: String, count: Int = 1) {
         XCTContext.runActivity(named: "Execute command: \(command)") { activity in
             if autoDelay > 0 {
                 sleep(duration: autoDelay)
@@ -298,53 +298,55 @@ public class QamlClient {
                 }
             }
             // arguments is a json encoded string
-            for action in response {
-                // Decode the arguments
-                let arguments: [String: Any]
-                do {
-                    arguments = try JSONSerialization.jsonObject(with: action.arguments.data(using: .utf8)!, options: []) as! [String: Any]
-                } catch {
-                    XCTFail("Failed to decode arguments: \(error)")
-                    return
-                }
-                os_log("Command: %@ - Executing action: %@ with arguments: %@", log: logger, type: .info, command, action.name, arguments)
-                
-                // MARK: handling the action
-                switch action.name {
-                case "type_text":
-                    let text = arguments["text"] as! String
-                    typeText(text: text)
-                case "tap":
-                    let x = Int(arguments["x"] as! Double)
-                    let y = Int(arguments["y"] as! Double)
-                    tap(x: x, y: y)
-                case "long_press":
-                    let x = Int(arguments["x"] as! Double)
-                    let y = Int(arguments["y"] as! Double)
-                    app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: x, dy: y)).press(forDuration: 2)
-                case "swipe":
-                    let direction = arguments["direction"] as! String
-                    swipe(direction: direction)
-                    // FIXME: Scroll on scrollable elements
-                case "scroll":
-                    let direction = arguments["direction"] as! String
-                    scroll(direction: direction)
-                case "drag":
-                    let startX = arguments["startX"] as! Int
-                    let startY = arguments["startY"] as! Int
-                    let endX = arguments["endX"] as! Int
-                    let endY = arguments["endY"] as! Int
-                    drag(startX: startX, startY: startY, endX: endX, endY: endY)
-                case "sleep":
-                    let duration = arguments["duration"] as! TimeInterval
-                    sleep(duration: duration)
-                case "report_error":
-                    let reason = arguments["reason"] as! String
-                    reportError(reason: reason)
-//                case "assert": -- testing if this breaks anything
-//                    XCTAssert(arguments["condition"] as! Bool, arguments["message"] as! String)
-                default:
-                    fatalError("Invalid action: \(action.name)")
+            for _ in 0..<count {
+                for action in response {
+                    // Decode the arguments
+                    let arguments: [String: Any]
+                    do {
+                        arguments = try JSONSerialization.jsonObject(with: action.arguments.data(using: .utf8)!, options: []) as! [String: Any]
+                    } catch {
+                        XCTFail("Failed to decode arguments: \(error)")
+                        return
+                    }
+                    os_log("Command: %@ - Executing action: %@ with arguments: %@", log: logger, type: .info, command, action.name, arguments)
+                    
+                    // MARK: handling the action
+                    switch action.name {
+                    case "type_text":
+                        let text = arguments["text"] as! String
+                        typeText(text: text)
+                    case "tap":
+                        let x = Int(arguments["x"] as! Double)
+                        let y = Int(arguments["y"] as! Double)
+                        tap(x: x, y: y)
+                    case "long_press":
+                        let x = Int(arguments["x"] as! Double)
+                        let y = Int(arguments["y"] as! Double)
+                        app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: x, dy: y)).press(forDuration: 2)
+                    case "swipe":
+                        let direction = arguments["direction"] as! String
+                        swipe(direction: direction)
+                        // FIXME: Scroll on scrollable elements
+                    case "scroll":
+                        let direction = arguments["direction"] as! String
+                        scroll(direction: direction)
+                    case "drag":
+                        let startX = arguments["startX"] as! Int
+                        let startY = arguments["startY"] as! Int
+                        let endX = arguments["endX"] as! Int
+                        let endY = arguments["endY"] as! Int
+                        drag(startX: startX, startY: startY, endX: endX, endY: endY)
+                    case "sleep":
+                        let duration = arguments["duration"] as! TimeInterval
+                        sleep(duration: duration)
+                    case "report_error":
+                        let reason = arguments["reason"] as! String
+                        reportError(reason: reason)
+                    case "assert":
+                        XCTAssert(arguments["condition"] as! Bool, arguments["message"] as! String)
+                    default:
+                        fatalError("Invalid action: \(action.name)")
+                    }
                 }
             }
         }
