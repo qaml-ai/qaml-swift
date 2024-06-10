@@ -237,6 +237,7 @@ final class qaml_sanity_tests: XCTestCase {
 //         shows up in the console - here is a sample output "qaml.QamlClient.Element(left: 347, top: 469, width: 33, height: 86, type: \"button\", label: \"4\U202fPM, Mostly Clear, 62\U00b0\", value: nil, placeholder: nil)" , check LogCat for the output in Android
         q.dumpAccessibilityElements()
     }
+<<<<<<< HEAD
     func test15_snapchat_longPress() throws {
         let app = XCUIApplication(bundleIdentifier: "com.toyopagroup.picaboo")
         app.launch()
@@ -282,6 +283,9 @@ final class qaml_sanity_tests: XCTestCase {
     }
     
     func test18_interrupt_handler() throws {
+=======
+    func test15_interrupt_handler() throws {
+>>>>>>> 1283f15 (adds count to execute)
         let app = XCUIApplication()
         app.resetAuthorizationStatus(for: .camera)
         app.resetAuthorizationStatus(for: .photos)
@@ -302,5 +306,62 @@ final class qaml_sanity_tests: XCTestCase {
 
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         XCTAssertEqual(springboard.alerts.count, 0)
+<<<<<<< HEAD
+=======
+    }
+    func test16_snapchat_longPress() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.toyopagroup.picaboo")
+        app.launch()
+        
+        let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
+        // FIXME: Edit this test so it better tests the long press
+        
+        q.execute("Long press the Take a Snap button")
+        q.execute("tap the caption button")
+        q.execute("type 'this is my test video sent at <date/time>' but replace <date/time> with the current date and time")
+        q.execute("press done")
+        q.assertCondition("A post is visible within the Snapchat app with a caption. There is a grey story button at the bottom and a blue 'send to' button at the bottom")
+        q.execute("tap save to photo gallery button")
+        q.execute("tap Send To button")
+        q.execute("tap My Story Friends Only")
+        q.execute("tap 'CamelTest Account'")
+        q.assertCondition("There is a list of contacts. There is a blue banner that says 'CamelTest Account' with a send icon.")
+        q.execute("tap Send at the bottom")
+        q.assertCondition("A blue banner at the top says 'sent!'")
+    }
+    func test17_snapchat_getValueFromElementList() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.toyopagroup.picaboo")
+        app.launch()
+        
+        let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
+        q.apiBaseURL = "https://qaml-api-server-staging.miguel-85b.workers.dev/v1"
+        
+        q.execute("tap the profile button")
+        let settingsID = q.getValue(searchFor: "ID of settings button", mode: .elementList)
+        print("~~~~~~ value read from settingsID: ")
+        print(settingsID)
+    }
+    func test18_weather_getValueFromScreenshot() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.apple.weather")
+        app.launch()
+        
+        let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
+        q.apiBaseURL = "https://qaml-api-server-staging.miguel-85b.workers.dev/v1"
+        
+        let weatherdescription = q.getValue(searchFor: "The high tomorrow", mode: .screenShot)
+        print("~~~~~~ value read from weatherdescription: ")
+        print(weatherdescription)
+    }
+    func test19_notes_multiExecute() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.apple.mobilenotes")
+        app.launch()
+        
+        let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
+        
+        q.execute("tap the new note button")
+        q.execute("tap the hand wrtiting button")
+        q.execute("swipe down", count: 2)
+        
+>>>>>>> 1283f15 (adds count to execute)
     }
 }
