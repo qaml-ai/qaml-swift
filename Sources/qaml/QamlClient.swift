@@ -322,7 +322,8 @@ public class QamlClient {
                     case "long_press":
                         let x = Int(arguments["x"] as! Double)
                         let y = Int(arguments["y"] as! Double)
-                        app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: x, dy: y)).press(forDuration: 2)
+                        let duration = arguments["duration", default: 2.0] as! TimeInterval
+                        app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: x, dy: y)).press(forDuration: duration)
                     case "swipe":
                         let direction = arguments["direction"] as! String
                         swipe(direction: direction)
