@@ -91,6 +91,33 @@ public class QamlClient {
         }
     }
 
+    public func dumpAccessibilityElements() {
+        let elements = try! getAccessibilityElements()
+        os_log("Accessibility elements: %@", log: logger, type: .debug, elements)
+    }
+
+    public func switchToApp(bundleId: String) {
+        let newApp = XCUIApplication(bundleIdentifier: bundleId)
+        newApp.activate()
+        app = newApp
+        sleep(duration: 1)
+    }
+
+    public func launchApp(bundleId: String) {
+        let newApp = XCUIApplication(bundleIdentifier: bundleId)
+        newApp.launch()
+        app = newApp
+        sleep(duration: 1)
+    }
+
+    // not support on Xcode lower than 14.3 or iOS 15.0
+    #if compiler(>=5.8)
+    public func openURL(url: String) {
+        XCUIDevice.shared.system.open(URL(string: url)!)
+        sleep(duration: 1)
+    }
+    #endif
+
     internal func customAlertHandler() -> ((XCUIElement) -> Bool) {
         return { element in
             guard element.elementType == .alert else {
@@ -199,25 +226,6 @@ public class QamlClient {
                 }
             }
         }
-    }
-
-    public func dumpAccessibilityElements() {
-        let elements = try! getAccessibilityElements()
-        os_log("Accessibility elements: %@", log: logger, type: .debug, elements)
-    }
-
-    public func switchToApp(bundleId: String) {
-        let newApp = XCUIApplication(bundleIdentifier: bundleId)
-        newApp.activate()
-        app = newApp
-        sleep(duration: 1)
-    }
-
-    public func launchApp(bundleId: String) {
-        let newApp = XCUIApplication(bundleIdentifier: bundleId)
-        newApp.launch()
-        app = newApp
-        sleep(duration: 1)
     }
 
 // not support on Xcode lower than 14.3 or iOS 15.0
