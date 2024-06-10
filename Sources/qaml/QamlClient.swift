@@ -580,7 +580,6 @@ public class QamlClient {
             let elements: [Element]
         }
 
-        print(String(data: data, encoding: .utf8))
         let actionResponse = try JSONDecoder().decode(CallEndpointResponse.self, from: data)
         let arguments = try JSONSerialization.jsonObject(with: actionResponse.toolCalls[0].arguments.data(using: .utf8)!) as! [String: Any]
         guard let elementIndex = arguments["elementID"] as? Int else {
@@ -652,9 +651,6 @@ public class QamlClient {
         var error: Error?
         var done = false
         let task = URLSession.shared.dataTask(with: urlRequest) { (taskData, taskResponse, taskError) in
-            print(taskResponse)
-            print(taskError)
-            print(taskData)
             data = taskData
             response = taskResponse
             error = taskError
