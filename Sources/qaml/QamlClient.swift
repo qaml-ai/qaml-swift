@@ -247,6 +247,13 @@ public class QamlClient {
         return returnValue
     }
 
+    // TODO: Finish this and make it public
+    func waitForNotification(timeout: TimeInterval = 10) {
+        let notification = springboard.descendants(matching: .init(rawValue: 83)!).firstMatch
+        if !notification.waitForExistence(timeout: timeout) {
+            XCTFail("Notification did not appear within timeout \(timeout) seconds")
+        }
+    }
 
     // MARK: payload construction
     public func execute(_ command: String, count: Int = 1) {
