@@ -147,5 +147,117 @@ final class qaml_sanity_tests: XCTestCase {
         q.openURL(url: "https://im3software.com")
         q.assertCondition("the screenshot shows the web page for im3software.com with a logo that says 'IM3'")
     }
+    func test09_podiumApp_tapAndTypeRegression() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.ionicframework.ionicapp410897")
+        app.launch()
+        
+        let q = QamlClient(
+            apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!,
+            app: app
+        )
+        
+        q.waitUntil("an app has completed loading")
+        q.execute("click the sign in button")
+        q.execute("tap enter email text field")
+        q.execute("type illiana@camelqa.com")
+        q.assertCondition("The screen shows a sign in page with the email 'illiana@camelqa.com' entered in the text field")
+        // tap and type bug is still present
+        q.type("mikeys@me.com")
+        q.assertCondition("The screen shows a sign in page with the email 'mikeys@me.com' entered in the text field")
+    }
+    func test10_podiumApp_launchApp() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.ionicframework.ionicapp410897")
+        app.launch()
+        
+        let q = QamlClient(
+            apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!,
+            app: app
+        )
+        
+        q.waitUntil("The screen shows an app with a sign in button")
+        q.execute("tap the sign in button")
+        q.assertCondition("the screenshot shows a text field that says 'your email or phone number' and theres a button that says 'next'")
+        q.launchApp(bundleId: "com.ionicframework.ionicapp410897")
+        q.waitUntil("The screen shows an app with a sign in button")
+    }
+    func test11_multiApp_launchApp() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.ionicframework.ionicapp410897")
+        app.launch()
+        
+        let q = QamlClient(
+            apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!,
+            app: app
+        )
+        
+        q.waitUntil("The screen shows an app with a sign in button")
+        q.execute("tap the sign in button")
+        q.assertCondition("the screenshot shows a text field that says 'your email or phone number' and theres a button that says 'next'")
+        q.launchApp(bundleId: "com.ionicframework.ionicapp410897")
+        q.waitUntil("The screen shows an app with a sign in button")
+        q.launchApp(bundleId: "com.apple.weather")
+        q.waitUntil("The screen shows a weather app")
+        q.execute("tap the show map button")
+        q.assertCondition("the screenshot shows a map view of a weather app")
+        q.execute("tap the done button")
+        
+    }
+    func test12_snapchat_tapSettings_buttonWithoutLabel() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.toyopagroup.picaboo")
+        app.launch()
+        
+        let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
+        
+        q.execute("tap the profile button")
+        q.execute("tap the settings button")
+        q.assertCondition("You are on the Settings page")
+        
+    }
+    func test13_snapchat_scrollUntil() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.toyopagroup.picaboo")
+        app.launch()
+        
+        let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
+        
+        q.execute("tap the profile button")
+        // in Swift, takes an enum. Options are .down, .up, .right, .left - double check the syntax for android
+        q.scroll(direction: .down, until: "'Cameos' section is visible")
+        q.assertCondition("The screen shows a section labeled 'Cameos'")
+    }
+    func test14_weatherApp_dumpAccessibility() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.apple.weather")
+        app.launch()
+        
+        let q = QamlClient(
+            apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!,
+            app: app,
+            useAccessibilityElements: false
+        )
+        
+        q.assertCondition("The screen shows a weather app")
+//         shows up in the console - here is a sample output "qaml.QamlClient.Element(left: 347, top: 469, width: 33, height: 86, type: \"button\", label: \"4\U202fPM, Mostly Clear, 62\U00b0\", value: nil, placeholder: nil)" , check LogCat for the output in Android
+        q.dumpAccessibilityElements()
+    }
+    
+    func test15_interrupt_handler() throws {
+        let app = XCUIApplication()
+        app.resetAuthorizationStatus(for: .camera)
+        app.resetAuthorizationStatus(for: .photos)
+        app.resetAuthorizationStatus(for: .location)
 
+        let q = QamlClient(
+            apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!,
+            app: app,
+            useAccessibilityElements: false
+        )
+        // TODO: Remove this line once we update prod server
+        q.apiBaseURL = "https://qaml-api-server-staging.miguel-85b.workers.dev/v1"
+
+        app.launchArguments = ["testingPermissions"] // This makes the app show a bunch of permissions on launch
+        app.launch()
+
+        q.execute("tap anything") // This should clear all alerts
+
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        XCTAssertEqual(springboard.alerts.count, 0)
+    }
 }
