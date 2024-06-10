@@ -10,7 +10,7 @@ public class QamlClient {
     public var shouldUseAccessibilityElements: Bool
     public var autoDelay: TimeInterval = 0.0
     public var apiBaseURL = "https://api.camelqa.com/v1"
-    public var alertHandler = "select the most permissive option. DO NOT select options related to precision"
+    public var alertHandler: String? = "select the most permissive option. DO NOT select options related to precision"
 
     var logger = OSLog(subsystem: "com.qaml", category: "QamlClient")
 
@@ -49,6 +49,9 @@ public class QamlClient {
     }
     
     func handleAllSpringboardAlerts() {
+        guard let alertHandler = alertHandler else {
+            return
+        }
         let options = XCTExpectedFailure.Options()
         options.isStrict = false
         while (self.springboard.alerts.count > 0) {
@@ -76,7 +79,7 @@ public class QamlClient {
                     continue
                 }
 
-                let buttonElement = try self.selectElement(instructions: self.alertHandler, context: staticTextLabels.joined(separator: "\n"), elements: buttonElements)
+                let buttonElement = try self.selectElement(instructions: alertHandler, context: staticTextLabels.joined(separator: "\n"), elements: buttonElements)
                 let button = alert.buttons[buttonElement.label]
                 if button.exists {
                     button.tap()
@@ -485,11 +488,14 @@ public class QamlClient {
     func getAccessibilityElements() throws -> [Element] {
         // First check springboard for alerts
         let springboardNavigationbars = springboard.navigationBars
+        let springboardAlerts = springboard.alerts
         let snapshot: XCUIElementSnapshot
-        while springboard.alerts.count > 0 {
-            handleAllSpringboardAlerts()
+        if alertHandler != nil {
+            while springboard.alerts.count > 0 {
+                handleAllSpringboardAlerts()
+            }
         }
-        if springboardNavigationbars.count > 0 {
+        if springboardAlerts.count > 0 || springboardNavigationbars.count > 0 {
             snapshot = try springboard.snapshot()
         } else {
             snapshot = try app.snapshot()
