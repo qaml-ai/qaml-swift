@@ -14,8 +14,6 @@ public class QamlClient {
 
     var logger = OSLog(subsystem: "com.qaml", category: "QamlClient")
 
-    let apiBaseURL = "https://api.camelqa.com/v1"
-
     public init(apiKey: String, app: XCUIApplication, useAccessibilityElements: Bool = true) {
         self.apiKey = apiKey
         self.app = app
@@ -238,6 +236,14 @@ public class QamlClient {
         sleep(duration: 1)
     }
 #endif
+
+    // TODO: Finish this and make it public
+    func waitForNotification(timeout: TimeInterval = 10) {
+        let notification = springboard.descendants(matching: .init(rawValue: 83)!).firstMatch
+        if !notification.waitForExistence(timeout: timeout) {
+            XCTFail("Notification did not appear within timeout \(timeout) seconds")
+        }
+    }
 
      public func assertCondition(_ assertion: String) {
         XCTContext.runActivity(named: "Assert Condition: \(assertion)") { activity in
