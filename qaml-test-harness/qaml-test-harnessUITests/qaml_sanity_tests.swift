@@ -310,14 +310,15 @@ final class qaml_sanity_tests: XCTestCase {
         print("~~~~~~ value read from weatherdescription: ")
         print(weatherdescription)
     }
-    func test19_notes_multiExecute() throws {
-        let app = XCUIApplication(bundleIdentifier: "com.apple.mobilenotes")
+    func test19_snapchat_multiExecute() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.toyopagroup.picaboo")
         app.launch()
         
         let q = QamlClient(apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!, app: app)
         
-        q.execute("tap the new note button")
-        q.execute("tap the hand wrtiting button")
-        q.execute("swipe down", count: 2)
+        q.execute("tap the profile button")
+        q.execute("swipe down", count: 4)
+        q.assertCondition("There is a section labeled 'Cameos'")
+        
     }
 }
