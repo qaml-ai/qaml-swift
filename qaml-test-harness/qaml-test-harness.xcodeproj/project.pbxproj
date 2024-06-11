@@ -29,7 +29,6 @@
 
 /* Begin PBXFileReference section */
 		5BEF9A3A2C0105ED003971C7 /* qaml_sanity_tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = qaml_sanity_tests.swift; sourceTree = "<group>"; };
-		D200C8C82C167A4E007AC7FE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D206892B2BFFDD4E00108A7D /* qaml-test-harness.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "qaml-test-harness.xctestplan"; sourceTree = "<group>"; };
 		D2C530782BFFD61C00453798 /* qaml-test-harness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "qaml-test-harness.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D2C5307B2BFFD61C00453798 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -96,7 +95,6 @@
 		D2C5309B2BFFD61D00453798 /* qaml-test-harnessUITests */ = {
 			isa = PBXGroup;
 			children = (
-				D200C8C82C167A4E007AC7FE /* Info.plist */,
 				D2C5309C2BFFD61D00453798 /* qaml_test_harnessUITests.swift */,
 				5BEF9A3A2C0105ED003971C7 /* qaml_sanity_tests.swift */,
 			);
@@ -435,7 +433,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = PEZC3LCN5S;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "qaml-test-harnessUITests/Info.plist";
+				INFOPLIST_FILE = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.camelqa.qaml-test-harnessUITests";
@@ -455,7 +453,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = PEZC3LCN5S;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "qaml-test-harnessUITests/Info.plist";
+				INFOPLIST_FILE = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.camelqa.qaml-test-harnessUITests";

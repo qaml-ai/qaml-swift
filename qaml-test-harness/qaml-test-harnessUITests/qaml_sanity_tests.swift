@@ -250,7 +250,7 @@ final class qaml_sanity_tests: XCTestCase {
         app.resetAuthorizationStatus(for: .camera)
         app.resetAuthorizationStatus(for: .photos)
         app.resetAuthorizationStatus(for: .location)
-
+        
         let q = QamlClient(
             apiKey: ProcessInfo.processInfo.environment["QAML_API_KEY"]!,
             app: app,
@@ -258,14 +258,15 @@ final class qaml_sanity_tests: XCTestCase {
         )
         // TODO: Remove this line once we update prod server
         q.apiBaseURL = "https://qaml-api-server-staging.miguel-85b.workers.dev/v1"
-
+        
         app.launchArguments = ["testingPermissions"] // This makes the app show a bunch of permissions on launch
         app.launch()
-
+        
         q.execute("tap anything") // This should clear all alerts
-
+        
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         XCTAssertEqual(springboard.alerts.count, 0)
+    }
 
     func test16_snapchat_longPress() throws {
         let app = XCUIApplication(bundleIdentifier: "com.toyopagroup.picaboo")
