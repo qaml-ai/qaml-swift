@@ -14,32 +14,18 @@ public class QamlClient {
 
     var logger = OSLog(subsystem: "com.qaml", category: "QamlClient")
 
+    // MARK: Public API - public functions people can call directly
     public init(apiKey: String, app: XCUIApplication, useAccessibilityElements: Bool = true) {
         self.apiKey = apiKey
         self.app = app
         self.shouldUseAccessibilityElements = useAccessibilityElements
     }
 
-    // MARK: Public API
-
     public enum Direction: String {
         case left
         case down
         case up
         case right
-    }
-
-    public func scroll(direction: Direction, until condition: String) {
-        XCTContext.runActivity(named: "Scrolling \(direction) until \(condition)") { activity in
-            while true {
-                do {
-                    try _assertCondition(condition, activity: activity)
-                    break
-                } catch {
-                    scroll(direction: direction.rawValue)
-                }
-            }
-        }
     }
 
     public func type(_ inputString: String) {
@@ -125,6 +111,142 @@ public class QamlClient {
             return true
         }
     }
+    
+    public func assertCondition(_ assertion: String) {
+       XCTContext.runActivity(named: "Assert Condition: \(assertion)") { activity in
+           do {
+               try _assertCondition(assertion, activity: activity)
+           } catch {
+               XCTFail("\(error)")
+           }
+       }
+    }
+
+    public func waitUntil(_ condition: String, timeout: TimeInterval = 10) {
+       let start = Date()
+       XCTContext.runActivity(named: "Wait Until \(condition)") { activity in
+           do {
+               while true {
+                   if Date().timeIntervalSince(start) > timeout {
+                       try _assertCondition(condition, activity: activity)
+                       return
+                   }
+                   do {
+                       os_log("Waiting for condition: %@", log: logger, type: .info, condition)
+                       try _assertCondition(condition, activity: activity)
+                       return
+                   } catch {
+                       os_log("Condition %@ not met yet. Retrying...", log: logger, type: .info, condition)
+                   }
+               }
+           } catch {
+               XCTFail("\(error)")
+           }
+       }
+    }
+    
+    public func scroll(direction: Direction, until condition: String) {
+        XCTContext.runActivity(named: "Scrolling \(direction) until \(condition)") { activity in
+            while true {
+                do {
+                    try _assertCondition(condition, activity: activity)
+                    break
+                } catch {
+                    scroll(direction: direction.rawValue)
+                }
+            }
+        }
+    }
+    
+    public enum SearchMode {
+        case screenShot
+        case elementList
+    }
+    // get value returns a string
+    public func getValue(searchFor prompt: String, mode: SearchMode = .elementList) -> String {
+        var returnValue = ""
+        // MARK: payload construction
+        XCTContext.runActivity(named: "Get value: \(prompt)") { activity in
+            if autoDelay > 0 {
+                sleep(duration: autoDelay)
+            }
+            guard var accessibilityElements = try? getAccessibilityElements() else {
+                return
+            }
+            var isKeyboardShown = false
+            accessibilityElements = accessibilityElements.filter { element in
+                if element.type == "keyboard" || element.type == "key" {
+                    isKeyboardShown = true
+                    return false
+                }
+                return true
+            }
+            let windowSize = getWindowSize()
+            
+            let model: String
+            switch mode {
+            case .elementList:
+                model = "gpt-3.5-turbo"
+            case .screenShot:
+                model = "gpt-4o"
+            }
+            
+            let payload = [
+                "action": prompt,
+                "model": model,
+                "screen_size": ["width": Int(windowSize.width), "height": Int(windowSize.height)],
+                "screenshot": getScreenshot(activity),
+                "platform": "iOS", // Set this as a header so we never forget it?
+                "extra_context": systemPrompt,
+                "accessibility_elements": accessibilityElements.map(\.dictionaryRepresentation),
+                "is_keyboard_shown": isKeyboardShown
+            ]
+
+            let url = URL(string: "\(apiBaseURL)/get-value")!
+            guard let request = try? constructAPIRequest(url: url, payload: payload) else {
+                return
+            }
+            // MARK: sending the request
+            let (data, httpResponse, error) = synchronousDataTaskWithRunLoop(urlRequest: request)
+            if let error {
+                XCTFail(error.localizedDescription)
+                return
+            }
+            // MARK: start of handling response
+            guard let response = try? JSONDecoder().decode([ActionResponse].self, from: data) else {
+                do {
+                    let failMessage = try JSONDecoder().decode(QamlErrorResponse.self, from: data)
+                    XCTFail("API Error: \(failMessage.error)")
+                    return
+                } catch {
+                    XCTFail("Failed to decode response: \(error)")
+                    return
+                }
+            }
+            // arguments is a json encoded string
+            for action in response {
+                // Decode the arguments
+                let arguments: [String: Any]
+                do {
+                    arguments = try JSONSerialization.jsonObject(with: action.arguments.data(using: .utf8)!, options: []) as! [String: Any]
+                } catch {
+                    XCTFail("Failed to decode arguments: \(error)")
+                    return
+                }
+                os_log("Command: %@ - Executing action: %@ with arguments: %@", log: logger, type: .info, prompt, action.name, arguments)
+                
+                // MARK: handling the action
+                switch action.name {
+                case "get_value":
+                    returnValue = arguments["return_value"] as! String
+                default:
+                    fatalError("Invalid action: \(action.name)")
+                }
+            }
+        }
+        return returnValue
+    }
+
 
     // MARK: payload construction
     public func execute(_ command: String, count: Int = 1) {
@@ -164,6 +286,7 @@ public class QamlClient {
                 XCTFail(error.localizedDescription)
                 return
             }
+            // MARK: start of handling response
             guard let response = try? JSONDecoder().decode([ActionResponse].self, from: data) else {
                 do {
                     let failMessage = try JSONDecoder().decode(QamlErrorResponse.self, from: data)
@@ -199,7 +322,8 @@ public class QamlClient {
                     case "long_press":
                         let x = Int(arguments["x"] as! Double)
                         let y = Int(arguments["y"] as! Double)
-                        app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: x, dy: y)).press(forDuration: 2)
+                        let duration = arguments["duration", default: 2.0] as! TimeInterval
+                        app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: x, dy: y)).press(forDuration: duration)
                     case "swipe":
                         let direction = arguments["direction"] as! String
                         swipe(direction: direction)
@@ -229,59 +353,11 @@ public class QamlClient {
         }
     }
 
-// not support on Xcode lower than 14.3 or iOS 15.0
-#if compiler(>=5.8)
-    public func openURL(url: String) {
-        XCUIDevice.shared.system.open(URL(string: url)!)
-        sleep(duration: 1)
-    }
-#endif
-
-    // TODO: Finish this and make it public
-    func waitForNotification(timeout: TimeInterval = 10) {
-        let notification = springboard.descendants(matching: .init(rawValue: 83)!).firstMatch
-        if !notification.waitForExistence(timeout: timeout) {
-            XCTFail("Notification did not appear within timeout \(timeout) seconds")
-        }
-    }
-
-     public func assertCondition(_ assertion: String) {
-        XCTContext.runActivity(named: "Assert Condition: \(assertion)") { activity in
-            do {
-                try _assertCondition(assertion, activity: activity)
-            } catch {
-                XCTFail("\(error)")
-            }
-        }
-    }
-
-    public func waitUntil(_ condition: String, timeout: TimeInterval = 10) {
-        let start = Date()
-        XCTContext.runActivity(named: "Wait Until \(condition)") { activity in
-            do {
-                while true {
-                    if Date().timeIntervalSince(start) > timeout {
-                        try _assertCondition(condition, activity: activity)
-                        return
-                    }
-                    do {
-                        os_log("Waiting for condition: %@", log: logger, type: .info, condition)
-                        try _assertCondition(condition, activity: activity)
-                        return
-                    } catch {
-                        os_log("Condition %@ not met yet. Retrying...", log: logger, type: .info, condition)
-                    }
-                }
-            } catch {
-                XCTFail("\(error)")
-            }
-        }
-    }
-
     struct QAMLException: Error {
         let reason: String
     }
 
+    // MARK: private/internal functions
     @MainActor
     func task(task: String, maxSteps: Int = 10) async throws {
         try XCTContext.runActivity(named: "Task: \(task)") { activity in
@@ -303,203 +379,13 @@ public class QamlClient {
         // Use run loop to sleep
         let start = Date()
         while Date().timeIntervalSince(start) < duration {
-            // TODO: Make sure that this doesn't hot loop
-            RunLoop.current.run(mode: .common, before: .distantFuture)
+            RunLoop.current.run(mode: .common, before: start + duration)
         }
     }
 
     func reportError(reason: String) {
         dumpAccessibilityElements()
         XCTFail(reason)
-    }
-
-    func elementTypeString(_ type: XCUIElement.ElementType) -> String {
-        let typeString: String
-        switch type {
-        case .any:
-            typeString = "any"
-        case .other:
-            typeString = "other"
-        case .application:
-            typeString = "application"
-        case .group:
-            typeString = "group"
-        case .window:
-            typeString = "window"
-        case .sheet:
-            typeString = "sheet"
-        case .drawer:
-            typeString = "drawer"
-        case .alert:
-            typeString = "alert"
-        case .dialog:
-            typeString = "dialog"
-        case .button:
-            typeString = "button"
-        case .radioButton:
-            typeString = "radioButton"
-        case .radioGroup:
-            typeString = "radioGroup"
-        case .checkBox:
-            typeString = "checkBox"
-        case .disclosureTriangle:
-            typeString = "disclosureTriangle"
-        case .popUpButton:
-            typeString = "popUpButton"
-        case .comboBox:
-            typeString = "comboBox"
-        case .menuButton:
-            typeString = "menuButton"
-        case .toolbarButton:
-            typeString = "toolbarButton"
-        case .popover:
-            typeString = "popover"
-        case .keyboard:
-            typeString = "keyboard"
-        case .key:
-            typeString = "key"
-        case .navigationBar:
-            typeString = "navigationBar"
-        case .tabBar:
-            typeString = "tabBar"
-        case .tabGroup:
-            typeString = "tabGroup"
-        case .toolbar:
-            typeString = "toolbar"
-        case .statusBar:
-            typeString = "statusBar"
-        case .table:
-            typeString = "table"
-        case .tableRow:
-            typeString = "tableRow"
-        case .tableColumn:
-            typeString = "tableColumn"
-        case .outline:
-            typeString = "outline"
-        case .outlineRow:
-            typeString = "outlineRow"
-        case .browser:
-            typeString = "browser"
-        case .collectionView:
-            typeString = "collectionView"
-        case .slider:
-            typeString = "slider"
-        case .pageIndicator:
-            typeString = "pageIndicator"
-        case .progressIndicator:
-            typeString = "progressIndicator"
-        case .activityIndicator:
-            typeString = "activityIndicator"
-        case .segmentedControl:
-            typeString = "segmentedControl"
-        case .picker:
-            typeString = "picker"
-        case .pickerWheel:
-            typeString = "pickerWheel"
-        case .switch:
-            typeString = "switch"
-        case .toggle:
-            typeString = "toggle"
-        case .link:
-            typeString = "link"
-        case .image:
-            typeString = "image"
-        case .icon:
-            typeString = "icon"
-        case .searchField:
-            typeString = "searchField"
-        case .scrollView:
-            typeString = "scrollView"
-        case .scrollBar:
-            typeString = "scrollBar"
-        case .staticText:
-            typeString = "staticText"
-        case .textField:
-            typeString = "textField"
-        case .secureTextField:
-            typeString = "secureTextField"
-        case .datePicker:
-            typeString = "datePicker"
-        case .textView:
-            typeString = "textView"
-        case .menu:
-            typeString = "menu"
-        case .menuItem:
-            typeString = "menuItem"
-        case .menuBar:
-            typeString = "menuBar"
-        case .menuBarItem:
-            typeString = "menuBarItem"
-        case .map:
-            typeString = "map"
-        case .webView:
-            typeString = "webView"
-        case .incrementArrow:
-            typeString = "incrementArrow"
-        case .decrementArrow:
-            typeString = "decrementArrow"
-        case .timeline:
-            typeString = "timeline"
-        case .ratingIndicator:
-            typeString = "ratingIndicator"
-        case .valueIndicator:
-            typeString = "valueIndicator"
-        case .splitGroup:
-            typeString = "splitGroup"
-        case .splitter:
-            typeString = "splitter"
-        case .relevanceIndicator:
-            typeString = "relevanceIndicator"
-        case .colorWell:
-            typeString = "colorWell"
-        case .helpTag:
-            typeString = "helpTag"
-        case .matte:
-            typeString = "matte"
-        case .dockItem:
-            typeString = "dockItem"
-        case .ruler:
-            typeString = "ruler"
-        case .rulerMarker:
-            typeString = "rulerMarker"
-        case .grid:
-            typeString = "grid"
-        case .levelIndicator:
-            typeString = "levelIndicator"
-        case .cell:
-            typeString = "cell"
-        case .layoutArea:
-            typeString = "layoutArea"
-        case .layoutItem:
-            typeString = "layoutItem"
-        case .handle:
-            typeString = "handle"
-        case .stepper:
-            typeString = "stepper"
-        case .tab:
-            typeString = "tab"
-        case .touchBar:
-            typeString = "touchBar"
-        case .statusItem:
-            typeString = "statusItem"
-        }
-        return typeString
-    }
-
-    struct Element: Encodable {
-        let left: Int
-        let top: Int
-        let width: Int
-        let height: Int
-        let type: String
-        let label: String
-        let value: String?
-        let placeholder: String?
-    }
-
-    public func dumpAccessibilityElements() {
-        let elements = try! getAccessibilityElements()
-        os_log("Accessibility elements: %@", log: logger, type: .debug, elements)
     }
 
     func getAccessibilityElements() throws -> [Element] {
@@ -553,7 +439,7 @@ public class QamlClient {
                 width: Int(element.frame.width * windowScale),
                 height: Int(element.frame.height * windowScale),
                 type: elementTypeString(element.elementType),
-                label: element.label,
+                label: element.label.isEmpty ? element.identifier : element.label,
                 value: element.value != nil ? String(describing: element.value!) : nil,
                 placeholder: element.placeholderValue
             )
@@ -562,8 +448,19 @@ public class QamlClient {
         return accessibilityElements
     }
 
-    public func type(_ inputString: String) {
-        typeText(text: inputString)
+    // convience function to send API request
+    func constructAPIRequest(url: URL, payload: [String: Any]) throws -> URLRequest {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        } catch {
+            XCTFail("Failed to encode payload: \(error)")
+            throw QAMLException(reason: "Error encoding data")
+        }
+        return request
     }
 
     func constructTypedAPIRequest(url: URL, payload: Encodable) throws -> URLRequest {
@@ -592,50 +489,22 @@ public class QamlClient {
         return app.windows.firstMatch.frame
     }
 
-    public func assertCondition(_ assertion: String) {
-        XCTContext.runActivity(named: "Assert Condition: \(assertion)") { activity in
-            do {
-                try _assertCondition(assertion, activity: activity)
-            } catch {
-                XCTFail("\(error)")
-            }
-        }
-    }
-
-    public func _assertCondition(_ assertion: String, activity: XCTActivity) throws {
+    func _assertCondition(_ assertion: String, activity: XCTActivity) throws {
         sleep(duration: autoDelay + 0.5)
-        struct AssertionRequest: Encodable {
-            struct Size: Encodable {
-                let width: Double
-                let height: Double
-            }
-            let assertion: String
-            let screen_size: Size
-            let screenshot: String
-            let platform: String
-            let extra_context: String
-            let accessibility_elements: String
-        }
         let screenshotData = getScreenshot(activity)
         let screenSize = getWindowSize()
-        let payload = AssertionRequest(
-            assertion: assertion,
-            screen_size: AssertionRequest.Size(width: screenSize.width, height: screenSize.height),
-            screenshot: screenshotData,
-            platform: "iOS",
-            extra_context: systemPrompt,
-            accessibility_elements: ""
-        )
+
+        let payload: [String: Any] = [
+            "assertion": assertion,
+            "screen_size": ["width": Int(screenSize.width), "height": Int(screenSize.height)],
+            "screenshot": screenshotData,
+            "platform": "iOS",
+            "extra_context": systemPrompt,
+            "accessibility_elements": ""
+        ]
 
         let url = URL(string: "\(apiBaseURL)/assert")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        do {
-            request.httpBody = try JSONEncoder().encode(payload)
-        } catch {
-            XCTFail("Failed to encode payload: \(error)")
+        guard let request = try? constructAPIRequest(url: url, payload: payload) else {
             return
         }
 
@@ -645,22 +514,7 @@ public class QamlClient {
             return
         }
 
-        guard let data = data else {
-            XCTFail("No data received from QAML API")
-            return
-        }
-
-        struct AssertionResponse: Decodable {
-            let name: String
-            let arguments: String
-        }
-
-        let assertionResponses: [AssertionResponse]
-        let arguments: [String: Any]
-        do {
-            assertionResponses = try JSONDecoder().decode([AssertionResponse].self, from: data)
-            arguments = try JSONSerialization.jsonObject(with: assertionResponses[0].arguments.data(using: .utf8)!, options: []) as! [String: Any]
-        } catch {
+        guard let assertionResponses = try? JSONDecoder().decode([ActionResponse].self, from: data) else {
             do {
                 let failMessage = try JSONDecoder().decode(QamlErrorResponse.self, from: data)
                 XCTFail("API Error: \(failMessage.error)")
@@ -669,6 +523,7 @@ public class QamlClient {
             }
             return
         }
+        let arguments = try JSONSerialization.jsonObject(with: assertionResponses[0].arguments.data(using: .utf8)!, options: []) as! [String: Any]
         guard let result = arguments["result"] as? Bool else {
             throw QAMLException(reason: "Invalid response from QAML API")
         }
@@ -734,33 +589,18 @@ public class QamlClient {
         return actionResponse.elements[elementIndex]
     }
 
-    struct QAMLException: Error {
-        let reason: String
-    }
-
-    @MainActor
-    func task(task: String, maxSteps: Int = 10) async throws {
-        try XCTContext.runActivity(named: "Task: \(task)") { activity in
-            var progress: [String] = []
-            var iterations = 0
-            while true {
-                if iterations >= maxSteps {
-                    XCTFail("Task execution took too many steps. Max steps: \(maxSteps)")
-                }
-                iterations += 1
-                sleep(duration: 0.5)
-                let accessibilityElements = try getAccessibilityElements()
-                let payload = ["task": task, "progress": progress, "screenshot": getScreenshot(activity), "accessibility_elements": accessibilityElements] as [String : Any]
-            }
-        }
-    }
 
     func tap(x: Int, y: Int) {
         app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: x, dy: y)).tap()
     }
 
     func drag(startX: Int, startY: Int, endX: Int, endY: Int) {
-        app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: startX, dy: startY)).press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: endX, dy: endY)))
+        app.windows.firstMatch
+            .coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+            .withOffset(CGVector(dx: startX, dy: startY))
+            .press(forDuration: 0.1,
+                   thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+                .withOffset(CGVector(dx: endX, dy: endY)))
     }
 
     func swipe(direction: String) {
@@ -806,8 +646,8 @@ public class QamlClient {
         element.typeText(text)
     }
     
-    func synchronousDataTaskWithRunLoop(urlRequest: URLRequest) -> (Data?, URLResponse?, Error?) {
-        var data: Data?
+    func synchronousDataTaskWithRunLoop(urlRequest: URLRequest) -> (Data, URLResponse?, Error?) {
+        var data: Data!
         var response: URLResponse?
         var error: Error?
         var done = false
@@ -832,25 +672,6 @@ public class QamlClient {
             }
         }
         return (data, response, error)
-    }
-    
-    public enum Direction: String {
-        case left
-        case down
-        case up
-        case right
-    }
-    public func scroll(direction: Direction, until condition: String) {
-        XCTContext.runActivity(named: "Scrolling \(direction) until \(condition)") { activity in
-            while true {
-                do {
-                    try _assertCondition(condition, activity: activity)
-                    break
-                } catch {
-                    scroll(direction: direction.rawValue)
-                }
-            }
-        }
     }
 
     func createXCDeviceEvent(page: UInt32, usage: UInt32, duration: TimeInterval) -> AnyObject? {
@@ -896,7 +717,7 @@ public class QamlClient {
 
 }
 
-struct QamlErrorResponse: Codable {
+public struct QamlErrorResponse: Codable {
     let error: String?
 }
 
@@ -1040,4 +861,3 @@ extension XCUIElementSnapshot {
         }
     }
 }
-
