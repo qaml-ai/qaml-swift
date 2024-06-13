@@ -273,7 +273,8 @@ public class QamlClient {
                 "platform": "iOS", // Set this as a header so we never forget it?
                 "extra_context": systemPrompt,
                 "accessibility_elements": accessibilityElements.map(\.dictionaryRepresentation),
-                "is_keyboard_shown": isKeyboardShown
+                "is_keyboard_shown": isKeyboardShown,
+                "use_accessibility": shouldUseAccessibilityElements
             ]
 
             let url = URL(string: "\(apiBaseURL)/execute")!
@@ -359,7 +360,7 @@ public class QamlClient {
 
     // MARK: private/internal functions
     @MainActor
-    func task(task: String, maxSteps: Int = 10) async throws {
+    func task(task: String, maxSteps: Int = 10) {
         try XCTContext.runActivity(named: "Task: \(task)") { activity in
             var progress: [String] = []
             var iterations = 0
@@ -369,8 +370,12 @@ public class QamlClient {
                 }
                 iterations += 1
                 sleep(duration: 0.5)
-                let accessibilityElements = try getAccessibilityElements()
-                let payload = ["task": task, "progress": progress, "screenshot": getScreenshot(activity), "accessibility_elements": accessibilityElements] as [String : Any]
+                do {
+                    let accessibilityElements = try getAccessibilityElements()
+                    let payload = ["task": task, "progress": progress, "screenshot": getScreenshot(activity), "accessibility_elements": accessibilityElements] as [String : Any]
+                } catch {
+                    XCTFail("Agent failed")
+                }
             }
         }
     }
@@ -478,7 +483,7 @@ public class QamlClient {
     }
 
     private func getScreenshot(_ activity: XCTActivity) -> String {
-        let screenshot = app.screenshot()
+        let screenshot = app.windows.firstMatch.screenshot()
         let attachment = XCTAttachment(screenshot: screenshot)
         attachment.lifetime = .keepAlways
         activity.add(attachment)
